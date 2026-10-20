@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import http from 'node:http'
 import { WebSocketServer, type WebSocket } from 'ws'
 import {
+  SESSION_NOT_FOUND_CLOSE_CODE,
   SESSIONS_PATH,
   WS_PATH,
   type CreateSessionResponse,
@@ -13,12 +14,12 @@ import { parseCreateSessionRequest } from './session/commands'
 import { CommandRejected } from './session/errors'
 import { createSession } from './session/reducer'
 
-const SESSION_NOT_FOUND = 4404
+const MAX_MESSAGE_BYTES = 16 * 1024
 
 export function createServer(deps: RoomDependencies): http.Server {
   const server = http.createServer(createApi(deps))
   const connectToRoom = roomConnector(new RoomHub(deps))
-  const sockets = new WebSocketServer({ noServer: true })
+  const sockets = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES })
   server.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url ?? '/', 'http://localhost')
     if (url.pathname !== WS_PATH) return socket.destroy()
@@ -52,7 +53,7 @@ function rejectionAsBadRequest(
 function roomConnector(hub: RoomHub) {
   return (socket: WebSocket, sessionId: string | null): void => {
     const room = sessionId ? hub.find(sessionId) : undefined
-    if (!room) return socket.close(SESSION_NOT_FOUND, 'Session not found')
+    if (!room) return socket.close(SESSION_NOT_FOUND_CLOSE_CODE, 'Session not found')
     room.connect(socket)
   }
 }

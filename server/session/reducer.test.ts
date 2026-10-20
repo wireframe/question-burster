@@ -111,6 +111,19 @@ describe('applyCommand join', () => {
     expect(Object.keys(result.state.participants)).toEqual(['p-new'])
   })
 
+  it('renames the participant a socket already joined as instead of adding another', () => {
+    const state = buildSession({ participants: { p1: ada } })
+
+    const result = applyCommand(state, {
+      actorId: 'p1',
+      command: { type: 'join', name: 'Grace' },
+      ctx: contextWithIds('p-new', 't-new'),
+    })
+
+    expect(result.joined).toEqual({ participantId: 'p1', resumeToken: 't1' })
+    expect(result.state.participants).toEqual({ p1: { ...ada, name: 'Grace' } })
+  })
+
   it("never lets another participant's id claim their identity", () => {
     const state = buildSession({ participants: { p1: ada } })
 

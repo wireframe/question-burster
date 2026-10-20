@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ClientCommand, ServerMessage } from '../../shared/protocol'
+import { SESSION_NOT_FOUND_CLOSE_CODE, type ClientCommand, type ServerMessage } from '../../shared/protocol'
 import { buildView } from '../test-support'
 import { createSessionClient, type WebSocketLike } from './sessionClient'
 
@@ -12,7 +12,7 @@ class FakeSocket implements WebSocketLike {
   send(data: string) { this.sent.push(JSON.parse(data)) }
   close() { this.closed = true }
   open() { this.onopen?.(new Event('open')) }
-  serverClose(reason: string) { this.onclose?.(new CloseEvent('close', { reason })) }
+  serverClose(reason: string, code = 1006) { this.onclose?.(new CloseEvent('close', { reason, code })) }
   receive(message: ServerMessage) { this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(message) })) }
 }
 
@@ -49,8 +49,12 @@ describe('createSessionClient', () => {
   beforeEach(() => {
     storage = new MemoryStorage()
     vi.spyOn(Date, 'now').mockReturnValue(1000)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   })
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
 
   it('connects to the socket path for its session', () => {
     expect(connect().paths).toEqual(['/ws?session=s1'])
@@ -79,6 +83,66 @@ describe('createSessionClient', () => {
     socket.serverClose('Session not found')
 
     expect(client.getSnapshot().lastRejection).toBe('Session not found')
+  })
+
+  describe('when the connection drops', () => {
+    function droppedClient() {
+      const { client, sockets } = createClient()
+      client.connect()
+      sockets[0].receive({ type: 'state', view })
+      sockets[0].serverClose('')
+      return { client, sockets }
+    }
+
+    it('drops the stale view so nothing is sent on a dead socket', () => {
+      expect(droppedClient().client.getSnapshot().view).toBeNull()
+    })
+
+    it('reconnects after a short delay', () => {
+      const { sockets } = droppedClient()
+
+      vi.runAllTimers()
+
+      expect(sockets).toHaveLength(2)
+    })
+
+    it('rejoins with the stored identity once reconnected', () => {
+      storage.setItem('qb:s1', JSON.stringify({ resumeToken: 't1', name: 'Ada' }))
+      const { sockets } = droppedClient()
+
+      vi.runAllTimers()
+      sockets[1].open()
+
+      expect(sockets[1].sent).toEqual([{ type: 'join', name: 'Ada', resumeToken: 't1' }])
+    })
+
+    it('clears the connection notice once reconnected', () => {
+      const { client, sockets } = droppedClient()
+
+      vi.runAllTimers()
+      sockets[1].open()
+
+      expect(client.getSnapshot().lastRejection).toBeNull()
+    })
+
+    it('does not reconnect once closed', () => {
+      const { client, sockets } = droppedClient()
+
+      client.close()
+      vi.runAllTimers()
+
+      expect(sockets).toHaveLength(1)
+    })
+  })
+
+  it('does not reconnect to a session that does not exist', () => {
+    const { client, sockets } = createClient()
+
+    client.connect()
+    sockets[0].serverClose('Session not found', SESSION_NOT_FOUND_CLOSE_CODE)
+    vi.runAllTimers()
+
+    expect(sockets).toHaveLength(1)
   })
 
   it('ignores the close of a socket it closed itself', () => {

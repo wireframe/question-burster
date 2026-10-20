@@ -266,6 +266,16 @@ describe('/ws', () => {
     await joinedClient(sessionId, 'Ada')
   })
 
+  it('drops a socket that sends an oversized message', async () => {
+    const sessionId = await createSessionId()
+    const client = connect(sessionId)
+    await client.next(ofType('state'))
+
+    client.sendRaw('x'.repeat(64 * 1024))
+
+    expect(await client.closed).toBe(1009)
+  })
+
   it('closes with 4404 for an unknown session', async () => {
     expect(await connect('unknown').closed).toBe(4404)
   })

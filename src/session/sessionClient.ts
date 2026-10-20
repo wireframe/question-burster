@@ -1,4 +1,10 @@
-import { WS_PATH, type ClientCommand, type ServerMessage, type SessionView } from '../../shared/protocol'
+import {
+  SESSION_NOT_FOUND_CLOSE_CODE,
+  WS_PATH,
+  type ClientCommand,
+  type ServerMessage,
+  type SessionView,
+} from '../../shared/protocol'
 
 export interface WebSocketLike {
   send(data: string): void
@@ -48,6 +54,8 @@ const INITIAL_SNAPSHOT: SessionSnapshot = {
   rejoining: false,
 }
 
+const RECONNECT_DELAY_MS = 1000
+
 function sessionSocketPath(sessionId: string): string {
   return `${WS_PATH}?session=${encodeURIComponent(sessionId)}`
 }
@@ -59,6 +67,7 @@ export function createSessionClient(
   const storageKey = `qb:${sessionId}`
   const listeners = new Set<() => void>()
   let socket: WebSocketLike | undefined
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined
   let snapshot = INITIAL_SNAPSHOT
 
   function readIdentity(): StoredIdentity {
@@ -114,17 +123,25 @@ export function createSessionClient(
 
   function connect() {
     const opened = socketFactory(sessionSocketPath(sessionId))
-    opened.onopen = rejoinWithStoredIdentity
+    opened.onopen = resume
     opened.onmessage = (event) => receive(JSON.parse(event.data))
-    opened.onclose = (event) => reportServerClose(opened, event.reason)
+    opened.onclose = (event) => handleServerClose(opened, event)
     socket = opened
   }
 
-  function reportServerClose(closed: WebSocketLike, reason: string) {
-    if (closed === socket) update({ lastRejection: reason || 'Connection lost', rejoining: false })
+  function resume() {
+    update({ lastRejection: null })
+    rejoinWithStoredIdentity()
+  }
+
+  function handleServerClose(closed: WebSocketLike, { code, reason }: CloseEvent) {
+    if (closed !== socket) return
+    update({ view: null, lastRejection: reason || 'Connection lost', rejoining: false })
+    if (code !== SESSION_NOT_FOUND_CLOSE_CODE) reconnectTimer = setTimeout(connect, RECONNECT_DELAY_MS)
   }
 
   function close() {
+    clearTimeout(reconnectTimer)
     const closing = socket!
     socket = undefined
     closing.close()

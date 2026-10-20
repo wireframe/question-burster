@@ -20,6 +20,7 @@ export const VOTES_PER_PERSON = 3
 
 export const SESSIONS_PATH = '/api/sessions'
 export const WS_PATH = '/ws'
+export const SESSION_NOT_FOUND_CLOSE_CODE = 4404
 
 export interface CreateSessionRequest {
   challenge: string

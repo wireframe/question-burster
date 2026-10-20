@@ -57,7 +57,7 @@ export function applyCommand(
 ): CommandResult {
   switch (command.type) {
     case 'join':
-      return join(state, { command, ctx })
+      return join(state, { actorId, command, ctx })
     case 'advance':
       return { state: advance(state, { command, ctx }) }
     case 'submitQuestion':
@@ -87,9 +87,12 @@ function singletonGroup(question: Question): GroupDraft {
   return { label: question.text, questionIds: [question.id] }
 }
 
-function join(state: SessionState, { command, ctx }: { command: JoinCommand; ctx: CommandContext }): CommandResult {
+function join(
+  state: SessionState,
+  { actorId, command, ctx }: { actorId: string | null; command: JoinCommand; ctx: CommandContext },
+): CommandResult {
   const name = validName(command.name)
-  const existing = findByResumeToken(state, command.resumeToken)
+  const existing = findByResumeToken(state, command.resumeToken) ?? findParticipant(state, actorId)
   const participant = existing ? { ...existing, name } : newParticipant(name, ctx)
   return {
     state: withParticipant(state, participant),
@@ -128,9 +131,13 @@ function markDone(state: SessionState, actorId: string | null): SessionState {
 }
 
 function requireParticipant(state: SessionState, actorId: string | null): Participant {
-  const participant = actorId === null ? undefined : state.participants[actorId]
+  const participant = findParticipant(state, actorId)
   if (!participant) throw new CommandRejected('Join the session first')
   return participant
+}
+
+function findParticipant(state: SessionState, actorId: string | null): Participant | undefined {
+  return actorId === null ? undefined : state.participants[actorId]
 }
 
 function requireBurst(state: SessionState): void {
