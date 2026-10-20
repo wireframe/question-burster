@@ -4,6 +4,38 @@ A small collaborative web app inspired by Hal Gregersen's Question Burst practic
 
 This is a personal prototype that runs locally. Planning artifacts live in `docs/plans/2026-10-20-question-burst-app/`.
 
+## How it works
+
+A sticky header keeps the challenge, the five steps and each person's status in view. The current step's callout says what to do now and holds the button that moves everyone to the next step.
+
+**1. Create a session.** Write the challenge you want questions about and pick a burst length (4 minutes by default).
+
+![Create a session](docs/screenshots/create-session.png)
+
+**2. Join.** Share the link. Everyone joins with a display name and shows up as an initial in the header.
+
+![Lobby with invite link](docs/screenshots/lobby.png)
+
+**3. Burst.** Everyone writes as many questions as they can against a shared countdown. You only see your own questions, so nobody anchors on anyone else's. A check on someone's initial means they've finished.
+
+![Private question burst](docs/screenshots/burst.png)
+
+**4. Consolidate.** Claude groups questions that ask the same thing. Anyone can merge groups, split a question out, or reword a group's label. Authors stay anonymous; each note's color marks which questions came from the same person, without saying who.
+
+![Consolidating similar questions](docs/screenshots/consolidate.png)
+
+**5. Vote.** Each person gets 3 dot votes and can stack them. Nobody sees anyone else's votes until results.
+
+![Dot voting](docs/screenshots/vote.png)
+
+**6. Results.** Groups are ranked by votes, and tied groups share a rank. The results stay at the session link.
+
+![Ranked results](docs/screenshots/results.png)
+
+It works on phones too:
+
+<img src="docs/screenshots/burst-mobile.png" alt="Burst on a phone" width="320">
+
 ## Setup
 
 ```sh
