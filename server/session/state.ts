@@ -9,6 +9,12 @@ export interface Participant {
   done: boolean
 }
 
+export interface Question {
+  id: string
+  authorId: string
+  text: string
+}
+
 export interface SessionState {
   id: string
   challenge: string
@@ -16,6 +22,7 @@ export interface SessionState {
   phase: Phase
   endsAt: number | null
   participants: Record<string, Participant>
+  questions: Record<string, Question>
 }
 
 export interface CommandContext {

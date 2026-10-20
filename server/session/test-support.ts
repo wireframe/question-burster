@@ -10,6 +10,7 @@ export function buildSession(overrides: Partial<SessionState> = {}): SessionStat
     phase: 'lobby',
     endsAt: null,
     participants: {},
+    questions: {},
     ...overrides,
   }
 }

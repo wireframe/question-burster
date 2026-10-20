@@ -4,6 +4,7 @@ import { CommandRejected } from './errors'
 import { applyCommand, createSession } from './reducer'
 import type { CommandContext, SessionState } from './state'
 import { buildSession } from './test-support'
+import { BURST_GRACE_MS } from './timer'
 
 function contextWithIds(...ids: string[]): CommandContext {
   return { now: 1_000, newId: () => ids.shift() ?? 'unexpected-id' }
@@ -24,6 +25,7 @@ describe('createSession', () => {
       phase: 'lobby',
       endsAt: null,
       participants: {},
+      questions: {},
     })
   })
 
@@ -154,5 +156,97 @@ describe('applyCommand advance', () => {
     advance(state, 'lobby')
 
     expect(state).toEqual(buildSession())
+  })
+})
+
+const ada = { id: 'p1', resumeToken: 't1', name: 'Ada', done: false }
+
+describe('applyCommand submitQuestion', () => {
+  const endsAt = 10_000
+
+  function inBurst(overrides: Partial<SessionState> = {}): SessionState {
+    return buildSession({ phase: 'burst', endsAt, participants: { p1: ada }, ...overrides })
+  }
+
+  function submit(state: SessionState, { text, actorId = 'p1', now = 5_000 }: { text: string; actorId?: string; now?: number }) {
+    const ctx = { now, newId: () => 'q-new' }
+    return applyCommand(state, { actorId, command: { type: 'submitQuestion', text }, ctx })
+  }
+
+  it('stores the trimmed question with a new id and the actor as author', () => {
+    const result = submit(inBurst(), { text: '  Why now?  ' })
+
+    expect(result.state.questions).toEqual({ 'q-new': { id: 'q-new', authorId: 'p1', text: 'Why now?' } })
+  })
+
+  it('does not mutate the input state', () => {
+    const state = inBurst()
+
+    submit(state, { text: 'Why now?' })
+
+    expect(state.questions).toEqual({})
+  })
+
+  it('accepts a 280 character question', () => {
+    const text = 'x'.repeat(280)
+
+    expect(submit(inBurst(), { text }).state.questions['q-new'].text).toBe(text)
+  })
+
+  it.each(['   ', 'x'.repeat(281)])('rejects the text %j', (text) => {
+    expect(() => submit(inBurst(), { text })).toThrow(CommandRejected)
+  })
+
+  it.each(['lobby', 'consolidate'] as const)('rejects a question during %s', (phase) => {
+    expect(() => submit(inBurst({ phase }), { text: 'Why?' })).toThrow(CommandRejected)
+  })
+
+  it('rejects a question from someone who is not a participant', () => {
+    expect(() => submit(inBurst(), { text: 'Why?', actorId: 'stranger' })).toThrow(CommandRejected)
+  })
+
+  it('accepts a question at the end of the grace window', () => {
+    expect(submit(inBurst(), { text: 'Why?', now: endsAt + BURST_GRACE_MS }).state.questions['q-new']).toBeDefined()
+  })
+
+  it('rejects a question after the grace window', () => {
+    expect(() => submit(inBurst(), { text: 'Why?', now: endsAt + BURST_GRACE_MS + 1 })).toThrow(CommandRejected)
+  })
+})
+
+describe('applyCommand markDone', () => {
+
+  function markDone(state: SessionState, actorId = 'p1') {
+    return applyCommand(state, { actorId, command: { type: 'markDone' }, ctx: contextWithIds() })
+  }
+
+  it('returns the same state when the actor is already done, so nothing is re-saved or re-broadcast', () => {
+    const state = buildSession({ phase: 'burst', participants: { p1: { ...ada, done: true } } })
+
+    expect(markDone(state).state).toBe(state)
+  })
+
+  it('marks the actor done during burst', () => {
+    const result = markDone(buildSession({ phase: 'burst', participants: { p1: ada } }))
+
+    expect(result.state.participants.p1).toEqual({ ...ada, done: true })
+  })
+
+  it('does not mutate the input state', () => {
+    const state = buildSession({ phase: 'burst', participants: { p1: ada } })
+
+    markDone(state)
+
+    expect(state.participants.p1.done).toBe(false)
+  })
+
+  it('rejects outside burst', () => {
+    expect(() => markDone(buildSession({ phase: 'lobby', participants: { p1: ada } }))).toThrow(CommandRejected)
+  })
+
+  it('rejects someone who is not a participant', () => {
+    expect(() => markDone(buildSession({ phase: 'burst', participants: { p1: ada } }), 'stranger')).toThrow(
+      CommandRejected,
+    )
   })
 })

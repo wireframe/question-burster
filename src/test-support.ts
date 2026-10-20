@@ -9,6 +9,7 @@ export function buildView(overrides: Partial<SessionView> = {}): SessionView {
     phase: 'lobby',
     endsAt: null,
     participants: [],
+    myQuestions: [],
     ...overrides,
   }
 }

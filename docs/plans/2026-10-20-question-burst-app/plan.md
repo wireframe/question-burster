@@ -188,7 +188,7 @@ interface CommandContext { now: number; newId: () => string }
 
 ## Phase 2: Private timed burst
 
-- [ ] Task 2.1: `submitQuestion` and `markDone` reducers (TDD)
+- [x] Task 2.1: `submitQuestion` and `markDone` reducers (TDD)
   - File: `shared/protocol.ts`, `server/session/state.ts`, `server/session/reducer.ts`, `server/session/reducer.test.ts`
   - Change:
     - Tests first:
@@ -199,7 +199,7 @@ interface CommandContext { now: number; newId: () => string }
     - Add `BURST_GRACE_MS = 2000` in `reducer.ts`.
   - Test: `bin/test server/session`
 
-- [ ] Task 2.2: Burst projection keeps questions private (TDD)
+- [x] Task 2.2: Burst projection keeps questions private (TDD)
   - File: `server/session/projection.ts`, `server/session/projection.test.ts`, `shared/protocol.ts`
   - Change:
     - Tests first:
@@ -211,14 +211,14 @@ interface CommandContext { now: number; newId: () => string }
     - Implement `myQuestions` (filled only during `burst`) and `questionCount`.
   - Test: `bin/test server/session`
 
-- [ ] Task 2.3: Timer schedule helper (TDD)
+- [x] Task 2.3: Timer schedule helper (TDD)
   - File: `server/session/timer.ts`, `server/session/timer.test.ts`
   - Change:
     - Tests first for `burstTimeoutMs(state, now)`: it returns `null` unless the phase is `burst`; it returns `endsAt - now` when that's in the future; and it returns `0` when `endsAt` has passed, which covers a restart mid-burst.
     - Implement it.
   - Test: `bin/test server/session/timer.test.ts`
 
-- [ ] Task 2.4: Room schedules the burst auto-advance (TDD)
+- [x] Task 2.4: Room schedules the burst auto-advance (TDD)
   - File: `server/rooms.ts`, `server/rooms.test.ts`
   - Change:
     - Test first, with `vi.useFakeTimers()` and an injected clock. After `advance` from lobby with `burstSeconds: 60`, advancing the timers by 60_000 puts the room in phase `consolidate` and broadcasts to every socket. A manual `advance` before expiry clears the pending timer, so it doesn't fire twice.
@@ -228,7 +228,7 @@ interface CommandContext { now: number; newId: () => string }
       - When a room loads, call `scheduleBurstTimeout()` as well, to handle restarts.
   - Test: `bin/test server/rooms.test.ts`
 
-- [ ] Task 2.5: Countdown hook (TDD)
+- [x] Task 2.5: Countdown hook (TDD)
   - File: `src/session/countdown.ts`, `src/session/countdown.test.ts`, `src/session/useCountdown.ts`
   - Change:
     - Tests first:
@@ -237,7 +237,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement both. `useCountdown(endsAt, clockOffset)` re-renders every 250 ms with `setInterval`.
   - Test: `bin/test src/session`
 
-- [ ] Task 2.6: Burst screen (TDD)
+- [x] Task 2.6: Burst screen (TDD)
   - File: `src/screens/Burst.tsx`, `src/screens/Burst.test.tsx`, `src/screens/SessionScreen.tsx`
   - Change:
     - Tests first (jsdom, with fake `view` and `send`):
@@ -249,7 +249,7 @@ interface CommandContext { now: number; newId: () => string }
     - Wire `Burst` into `SessionScreen`.
   - Test: `bin/test src`, then `bin/typecheck`
 
-- [ ] Task 2.7: Manual verification
+- [x] Task 2.7: Manual verification
   - Test:
     1. Run `bin/dev` and create a session with a 1-minute burst. Join from two browsers and advance.
     2. Both countdowns match to within a second.
@@ -257,7 +257,7 @@ interface CommandContext { now: number; newId: () => string }
     4. At 0:00, input locks in both browsers and the phase becomes consolidate on its own (still the placeholder).
     5. Restart the server during a fresh burst. The countdown carries on, and the phase still advances on time.
 
-- [ ] Commit Phase 2: `git add -A && git commit -m "Private timed burst with server-enforced lock and auto-advance"`
+- [x] Commit Phase 2: `git add -A && git commit -m "Private timed burst with server-enforced lock and auto-advance"`
 
 ## Phase 3: AI grouping and collaborative consolidation
 

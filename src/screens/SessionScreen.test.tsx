@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSession, type Session } from '../session/useSession'
 import { buildView } from '../test-support'
 import { SessionScreen } from './SessionScreen'
@@ -22,6 +22,10 @@ function renderWithSession(overrides: Partial<Session>) {
 }
 
 describe('SessionScreen', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('offers to join when the viewer is not a participant', () => {
     renderWithSession({})
 
@@ -47,10 +51,18 @@ describe('SessionScreen', () => {
     expect(screen.getByRole('button', { name: 'Start burst' })).toBeInTheDocument()
   })
 
-  it('shows the placeholder to a participant in a later phase', () => {
-    renderWithSession({ participantId: 'p1', view: buildView({ phase: 'burst' }) })
+  it('shows the burst with its countdown to a participant in the burst', () => {
+    vi.useFakeTimers({ now: 100_000, toFake: ['Date'] })
+    renderWithSession({ participantId: 'p1', clockOffset: 5_000, view: buildView({ phase: 'burst', endsAt: 230_000 }) })
 
-    expect(screen.getByText('Phase: burst')).toBeInTheDocument()
+    expect(screen.getByLabelText('Your question')).toBeInTheDocument()
+    expect(screen.getByText('2:05')).toBeInTheDocument()
+  })
+
+  it('shows the placeholder to a participant in a later phase', () => {
+    renderWithSession({ participantId: 'p1', view: buildView({ phase: 'consolidate' }) })
+
+    expect(screen.getByText('Phase: consolidate')).toBeInTheDocument()
   })
 
   it('lets a spectator see results without joining', () => {

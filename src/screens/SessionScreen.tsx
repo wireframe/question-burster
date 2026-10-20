@@ -1,9 +1,10 @@
 import { isFinalPhase, type SessionView } from '../../shared/protocol'
+import { useCountdown } from '../session/useCountdown'
 import { useSession, type Session } from '../session/useSession'
+import { Burst } from './Burst'
 import { JoinSession } from './JoinSession'
 import { Lobby } from './Lobby'
 import { Placeholder } from './Placeholder'
-import type { PhaseScreenProps } from './types'
 
 export function SessionScreen({ sessionId }: { sessionId: string }) {
   const session = useSession(sessionId)
@@ -19,18 +20,32 @@ function needsToJoin(participantId: string | null, view: SessionView): boolean {
   return participantId == null && !isFinalPhase(view.phase)
 }
 
-function SessionBody({ session: { view, participantId, rejoining, join, send } }: { session: Session }) {
+function SessionBody({ session }: { session: Session }) {
+  const { view, participantId, rejoining, join } = session
   if (!view) return <p>Connecting…</p>
   if (rejoining) return <p>Rejoining…</p>
   if (needsToJoin(participantId, view)) return <JoinSession challenge={view.challenge} onJoin={join} />
-  return <PhaseScreen view={view} send={send} />
+  return <PhaseScreen session={session} view={view} />
 }
 
-function PhaseScreen({ view, send }: PhaseScreenProps) {
+/** A session whose first state has arrived. */
+interface LiveSessionProps {
+  session: Session
+  view: SessionView
+}
+
+function PhaseScreen({ session, view }: LiveSessionProps) {
   switch (view.phase) {
     case 'lobby':
-      return <Lobby view={view} send={send} />
+      return <Lobby view={view} send={session.send} />
+    case 'burst':
+      return <BurstPhase session={session} view={view} />
     default:
-      return <Placeholder view={view} send={send} />
+      return <Placeholder view={view} send={session.send} />
   }
+}
+
+function BurstPhase({ session: { send, clockOffset, participantId }, view }: LiveSessionProps) {
+  const secondsRemaining = useCountdown(view.endsAt, clockOffset)
+  return <Burst view={view} send={send} secondsRemaining={secondsRemaining} participantId={participantId} />
 }

@@ -8,6 +8,8 @@ type Message = Record<string, unknown>
 const IS_VALID: Record<CommandType, (message: Message) => boolean> = {
   join: (message) => typeof message.name === 'string' && isOptionalString(message.resumeToken),
   advance: (message) => PHASE_ORDER.some((phase) => phase === message.fromPhase),
+  submitQuestion: (message) => typeof message.text === 'string',
+  markDone: () => true,
 }
 
 export function parseCommand(message: unknown): ClientCommand {

@@ -14,6 +14,7 @@ export const DEFAULT_BURST_SECONDS = 240
 export const MIN_BURST_SECONDS = 30
 export const MAX_BURST_SECONDS = 1800
 export const MAX_NAME_LENGTH = 40
+export const MAX_QUESTION_LENGTH = 280
 
 export const SESSIONS_PATH = '/api/sessions'
 export const WS_PATH = '/ws'
@@ -34,6 +35,8 @@ export interface ErrorResponse {
 export type ClientCommand =
   | { type: 'join'; name: string; resumeToken?: string }
   | { type: 'advance'; fromPhase: Phase }
+  | { type: 'submitQuestion'; text: string }
+  | { type: 'markDone' }
 
 export type ServerMessage =
   | { type: 'welcome'; participantId: string | null; resumeToken?: string; serverNow: number }
@@ -47,6 +50,11 @@ export interface ParticipantView {
   done: boolean
 }
 
+export interface QuestionView {
+  id: string
+  text: string
+}
+
 export interface SessionView {
   id: string
   challenge: string
@@ -54,4 +62,6 @@ export interface SessionView {
   phase: Phase
   endsAt: number | null
   participants: ParticipantView[]
+  /** The viewer's own questions; filled only during the burst. */
+  myQuestions: QuestionView[]
 }

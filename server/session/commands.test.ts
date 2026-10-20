@@ -7,6 +7,8 @@ describe('parseCommand', () => {
     { type: 'join', name: 'Ada' },
     { type: 'join', name: 'Ada', resumeToken: 't1' },
     { type: 'advance', fromPhase: 'lobby' },
+    { type: 'submitQuestion', text: 'Why?' },
+    { type: 'markDone' },
   ])('accepts %j', (message) => {
     expect(parseCommand(message)).toEqual(message)
   })
@@ -21,6 +23,8 @@ describe('parseCommand', () => {
     { type: 'join', name: 'Ada', resumeToken: 5 },
     { type: 'advance' },
     { type: 'advance', fromPhase: 'intermission' },
+    { type: 'submitQuestion' },
+    { type: 'submitQuestion', text: 42 },
   ])('rejects the malformed message %j', (message) => {
     expect(() => parseCommand(message)).toThrow(new CommandRejected('Invalid message'))
   })

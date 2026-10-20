@@ -35,3 +35,5 @@ button {
 button:disabled { background: #a3b3dd; cursor: not-allowed; }
 
 [role='alert'] { color: #b00020; }
+
+.countdown { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; margin: 8px 0; }
