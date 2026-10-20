@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { MAX_QUESTION_LENGTH, type ParticipantView, type QuestionView } from '../../shared/protocol'
+import { MAX_QUESTION_LENGTH, type ParticipantView } from '../../shared/protocol'
+import { QuestionList } from '../components/QuestionList'
 import { formatClock } from '../session/countdown'
 import { AdvanceButton } from './AdvanceButton'
 import type { PhaseScreenProps } from './types'
@@ -15,7 +16,7 @@ export function Burst({ view, send, secondsRemaining, participantId }: BurstProp
       <h1>{view.challenge}</h1>
       <Countdown secondsRemaining={secondsRemaining} />
       <QuestionForm send={send} timeIsUp={secondsRemaining === 0} />
-      <MyQuestions questions={view.myQuestions} />
+      <QuestionList questions={view.myQuestions} label="Your questions" />
       {!isDone(view.participants, participantId) && <DoneButton send={send} />}
       <ParticipantProgress participants={view.participants} />
       <AdvanceButton phase="burst" send={send}>End burst</AdvanceButton>
@@ -56,14 +57,6 @@ function QuestionForm({ send, timeIsUp }: Pick<PhaseScreenProps, 'send'> & { tim
         onChange={(e) => setText(e.target.value)}
       />
     </form>
-  )
-}
-
-function MyQuestions({ questions }: { questions: QuestionView[] }) {
-  return (
-    <ul aria-label="Your questions">
-      {questions.map((question) => <li key={question.id}>{question.text}</li>)}
-    </ul>
   )
 }
 

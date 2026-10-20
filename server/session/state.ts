@@ -35,6 +35,7 @@ export interface SessionState {
   questions: Record<string, Question>
   groupingStatus: GroupingStatus
   groups: Record<string, Group>
+  votes: Record<string, Record<string, number>>
 }
 
 export interface CommandContext {

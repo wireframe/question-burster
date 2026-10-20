@@ -12,6 +12,8 @@ const IS_VALID: Record<CommandType, (message: Message) => boolean> = {
   merge: (message) => areStrings(message.sourceGroupId, message.targetGroupId),
   split: (message) => areStrings(message.groupId, message.questionId),
   reword: (message) => areStrings(message.groupId, message.label) && typeof message.baseVersion === 'number',
+  castVote: hasGroupId,
+  removeVote: hasGroupId,
 }
 
 export function parseCommand(message: unknown): ClientCommand {
@@ -38,6 +40,10 @@ function isTypedMessage(value: unknown): value is Message & { type: string } {
 
 function areStrings(...values: unknown[]): boolean {
   return values.every((value) => typeof value === 'string')
+}
+
+function hasGroupId(message: Message): boolean {
+  return typeof message.groupId === 'string'
 }
 
 function isOptionalString(value: unknown): boolean {

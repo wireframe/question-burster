@@ -68,16 +68,16 @@ describe('SessionScreen', () => {
     expect(screen.getByText('Grouping similar questions…')).toBeInTheDocument()
   })
 
-  it('shows the placeholder to a participant in a later phase', () => {
+  it('shows voting to a participant in the vote phase', () => {
     renderWithSession({ participantId: 'p1', view: buildView({ phase: 'vote' }) })
 
-    expect(screen.getByText('Phase: vote')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show results' })).toBeInTheDocument()
   })
 
   it('lets a spectator see results without joining', () => {
-    renderWithSession({ view: buildView({ phase: 'results' }) })
+    renderWithSession({ view: buildView({ phase: 'results', results: [] }) })
 
-    expect(screen.getByText('Phase: results')).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Ranked groups' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Join' })).not.toBeInTheDocument()
   })
 

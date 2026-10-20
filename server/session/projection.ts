@@ -1,5 +1,15 @@
-import type { GroupView, ParticipantView, QuestionView, SessionView } from '../../shared/protocol'
+import {
+  VOTES_PER_PERSON,
+  type GroupView,
+  type ParticipantView,
+  type QuestionView,
+  type ResultView,
+  type SessionView,
+} from '../../shared/protocol'
+import { groupQuestionViews, toQuestionView } from './question-views'
+import { rankResults } from './results'
 import type { Group, Participant, Question, SessionState } from './state'
+import { votesUsedBy } from './votes'
 
 export function projectForClient(state: SessionState, viewerId: string | null): SessionView {
   return {
@@ -12,6 +22,10 @@ export function projectForClient(state: SessionState, viewerId: string | null): 
     myQuestions: myQuestions(state, viewerId),
     groupingStatus: state.groupingStatus,
     groups: projectGroups(state),
+    myVotes: myVotes(state, viewerId),
+    votesRemaining: votesRemaining(state, viewerId),
+    votersDone: votersDone(state),
+    results: projectResults(state),
   }
 }
 
@@ -44,10 +58,6 @@ function questionsBy(state: SessionState, authorId: string): Question[] {
   return Object.values(state.questions).filter((question) => question.authorId === authorId)
 }
 
-function toQuestionView(question: Question): QuestionView {
-  return { id: question.id, text: question.text }
-}
-
 function projectGroups(state: SessionState): GroupView[] {
   return Object.values(state.groups)
     .map((group) => projectGroup(group, state))
@@ -59,6 +69,24 @@ function projectGroup(group: Group, state: SessionState): GroupView {
     id: group.id,
     label: group.label,
     version: group.version,
-    questions: group.questionIds.map((questionId) => toQuestionView(state.questions[questionId])),
+    questions: groupQuestionViews(group, state),
   }
+}
+
+function myVotes(state: SessionState, viewerId: string | null): Record<string, number> {
+  if (viewerId === null) return {}
+  return Object.fromEntries(Object.entries(state.votes[viewerId] ?? {}).filter(([, count]) => count > 0))
+}
+
+function votesRemaining(state: SessionState, viewerId: string | null): number {
+  if (viewerId === null) return 0
+  return VOTES_PER_PERSON - votesUsedBy(state, viewerId)
+}
+
+function votersDone(state: SessionState): number {
+  return Object.keys(state.participants).filter((id) => votesUsedBy(state, id) === VOTES_PER_PERSON).length
+}
+
+function projectResults(state: SessionState): ResultView[] | null {
+  return state.phase === 'results' ? rankResults(state) : null
 }

@@ -16,6 +16,7 @@ export const MAX_BURST_SECONDS = 1800
 export const MAX_NAME_LENGTH = 40
 export const MAX_QUESTION_LENGTH = 280
 export const MAX_LABEL_LENGTH = MAX_QUESTION_LENGTH
+export const VOTES_PER_PERSON = 3
 
 export const SESSIONS_PATH = '/api/sessions'
 export const WS_PATH = '/ws'
@@ -41,6 +42,8 @@ export type ClientCommand =
   | { type: 'merge'; sourceGroupId: string; targetGroupId: string }
   | { type: 'split'; groupId: string; questionId: string }
   | { type: 'reword'; groupId: string; label: string; baseVersion: number }
+  | { type: 'castVote'; groupId: string }
+  | { type: 'removeVote'; groupId: string }
 
 export type ServerMessage =
   | { type: 'welcome'; participantId: string | null; resumeToken?: string; serverNow: number }
@@ -68,6 +71,14 @@ export interface GroupView {
   questions: QuestionView[]
 }
 
+export interface ResultView {
+  groupId: string
+  label: string
+  questions: QuestionView[]
+  votes: number
+  rank: number
+}
+
 export interface SessionView {
   id: string
   challenge: string
@@ -78,4 +89,8 @@ export interface SessionView {
   myQuestions: QuestionView[]
   groupingStatus: GroupingStatus
   groups: GroupView[]
+  myVotes: Record<string, number>
+  votesRemaining: number
+  votersDone: number
+  results: ResultView[] | null
 }

@@ -12,6 +12,8 @@ describe('parseCommand', () => {
     { type: 'merge', sourceGroupId: 'g1', targetGroupId: 'g2' },
     { type: 'split', groupId: 'g1', questionId: 'q1' },
     { type: 'reword', groupId: 'g1', label: 'Why?', baseVersion: 0 },
+    { type: 'castVote', groupId: 'g1' },
+    { type: 'removeVote', groupId: 'g1' },
   ])('accepts %j', (message) => {
     expect(parseCommand(message)).toEqual(message)
   })
@@ -35,6 +37,10 @@ describe('parseCommand', () => {
     { type: 'reword', groupId: 'g1', label: 'Why?' },
     { type: 'reword', groupId: 'g1', label: 3, baseVersion: 0 },
     { type: 'reword', groupId: 'g1', label: 'Why?', baseVersion: '0' },
+    { type: 'castVote' },
+    { type: 'castVote', groupId: 1 },
+    { type: 'removeVote' },
+    { type: 'removeVote', groupId: 1 },
   ])('rejects the malformed message %j', (message) => {
     expect(() => parseCommand(message)).toThrow(new CommandRejected('Invalid message'))
   })

@@ -6,7 +6,8 @@ import { Burst } from './Burst'
 import { Consolidate } from './Consolidate'
 import { JoinSession } from './JoinSession'
 import { Lobby } from './Lobby'
-import { Placeholder } from './Placeholder'
+import { Results } from './Results'
+import { Vote } from './Vote'
 
 export function SessionScreen({ sessionId }: { sessionId: string }) {
   const session = useSession(sessionId)
@@ -43,8 +44,10 @@ function PhaseScreen({ session, view }: LiveSessionProps) {
       return <BurstPhase session={session} view={view} />
     case 'consolidate':
       return <Consolidate view={view} send={session.send} />
-    default:
-      return <Placeholder view={view} send={session.send} />
+    case 'vote':
+      return <Vote view={view} send={session.send} />
+    case 'results':
+      return <Results view={view} />
   }
 }
 

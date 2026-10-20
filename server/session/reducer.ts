@@ -6,6 +6,7 @@ import {
   MAX_QUESTION_LENGTH,
   MIN_BURST_SECONDS,
   nextPhase,
+  VOTES_PER_PERSON,
   type ClientCommand,
   type CreateSessionRequest,
   type Phase,
@@ -13,6 +14,7 @@ import {
 import { burstLengthRejected, challengeRequired, CommandRejected } from './errors'
 import type { CommandContext, Group, GroupDraft, Participant, Question, SessionState, SystemCommand } from './state'
 import { burstClosesAt } from './timer'
+import { votesUsedBy } from './votes'
 
 type JoinCommand = Extract<ClientCommand, { type: 'join' }>
 type AdvanceCommand = Extract<ClientCommand, { type: 'advance' }>
@@ -20,6 +22,8 @@ type SubmitQuestionCommand = Extract<ClientCommand, { type: 'submitQuestion' }>
 type MergeCommand = Extract<ClientCommand, { type: 'merge' }>
 type SplitCommand = Extract<ClientCommand, { type: 'split' }>
 type RewordCommand = Extract<ClientCommand, { type: 'reword' }>
+type VoteCommand = Extract<ClientCommand, { type: 'castVote' | 'removeVote' }>
+type VoteInput = { actorId: string | null; command: VoteCommand }
 type GroupingCompletedCommand = Extract<SystemCommand, { type: 'groupingCompleted' }>
 
 export interface JoinedParticipant {
@@ -43,6 +47,7 @@ export function createSession(request: CreateSessionRequest, ctx: CommandContext
     questions: {},
     groupingStatus: 'idle',
     groups: {},
+    votes: {},
   }
 }
 
@@ -65,6 +70,10 @@ export function applyCommand(
       return { state: split(state, { actorId, command, ctx }) }
     case 'reword':
       return { state: reword(state, { actorId, command }) }
+    case 'castVote':
+      return { state: castVote(state, { actorId, command }) }
+    case 'removeVote':
+      return { state: removeVote(state, { actorId, command }) }
     case 'groupingCompleted':
       return { state: completeGrouping(state, { command, ctx }) }
   }
@@ -178,9 +187,8 @@ function requireGroupingSettled(state: SessionState): void {
 }
 
 function requireGroup(state: SessionState, groupId: string): Group {
-  const group = state.groups[groupId]
-  if (!group) throw new CommandRejected('Group not found')
-  return group
+  if (!Object.hasOwn(state.groups, groupId)) throw new CommandRejected('Group not found')
+  return state.groups[groupId]
 }
 
 function bumped(group: Group): Group {
@@ -202,6 +210,36 @@ function byId(groups: Group[]): Record<string, Group> {
 function withoutGroup(state: SessionState, groupId: string): SessionState {
   const groups = Object.fromEntries(Object.entries(state.groups).filter(([id]) => id !== groupId))
   return { ...state, groups }
+}
+
+function castVote(state: SessionState, { actorId, command }: VoteInput): SessionState {
+  const voterId = requireVoting(state, { actorId, command })
+  if (votesUsedBy(state, voterId) >= VOTES_PER_PERSON) throw new CommandRejected('No votes left')
+  return withVoteCount(state, { voterId, groupId: command.groupId, delta: 1 })
+}
+
+function removeVote(state: SessionState, { actorId, command }: VoteInput): SessionState {
+  const voterId = requireVoting(state, { actorId, command })
+  if (voteCount(state, { voterId, groupId: command.groupId }) === 0) throw new CommandRejected('No vote to remove')
+  return withVoteCount(state, { voterId, groupId: command.groupId, delta: -1 })
+}
+
+function requireVoting(state: SessionState, { actorId, command }: VoteInput): string {
+  const voter = requireParticipant(state, actorId)
+  if (state.phase !== 'vote') throw new CommandRejected('Voting is not open')
+  requireGroup(state, command.groupId)
+  return voter.id
+}
+
+type VoteKey = { voterId: string; groupId: string }
+
+function voteCount(state: SessionState, { voterId, groupId }: VoteKey): number {
+  return state.votes[voterId]?.[groupId] ?? 0
+}
+
+function withVoteCount(state: SessionState, { delta, ...key }: VoteKey & { delta: number }): SessionState {
+  const ballot = { ...state.votes[key.voterId], [key.groupId]: voteCount(state, key) + delta }
+  return { ...state, votes: { ...state.votes, [key.voterId]: ballot } }
 }
 
 function completeGrouping(

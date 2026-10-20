@@ -12,6 +12,7 @@ export function buildSession(overrides: Partial<SessionState> = {}): SessionStat
     questions: {},
     groupingStatus: 'idle',
     groups: {},
+    votes: {},
     ...overrides,
   }
 }

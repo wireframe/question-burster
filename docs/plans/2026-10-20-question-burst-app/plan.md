@@ -371,7 +371,7 @@ interface CommandContext { now: number; newId: () => string }
 
 ## Phase 4: Dot voting and results
 
-- [ ] Task 4.1: Vote reducers (TDD)
+- [x] Task 4.1: Vote reducers (TDD)
   - File: `shared/protocol.ts`, `server/session/state.ts`, `server/session/reducer.ts`, `server/session/reducer.test.ts`
   - Change:
     - Tests first, only valid during `vote` from a participant, with `VOTES_PER_PERSON = 3`:
@@ -382,7 +382,7 @@ interface CommandContext { now: number; newId: () => string }
     - Initialize `votes: {}` in `createSession`.
   - Test: `bin/test server/session`
 
-- [ ] Task 4.2: Results ranking (TDD)
+- [x] Task 4.2: Results ranking (TDD)
   - File: `server/session/results.ts`, `server/session/results.test.ts`
   - Change:
     - Tests first: `rankResults(state)` returns `[{groupId, label, questions: [{id, text}], votes, rank}]` sorted by votes descending, then label ascending.
@@ -391,7 +391,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement it.
   - Test: `bin/test server/session/results.test.ts`
 
-- [ ] Task 4.3: Vote and results projection hides tallies (TDD)
+- [x] Task 4.3: Vote and results projection hides tallies (TDD)
   - File: `server/session/projection.ts`, `server/session/projection.test.ts`, `shared/protocol.ts`
   - Change:
     - Tests first:
@@ -401,7 +401,7 @@ interface CommandContext { now: number; newId: () => string }
       - `expectNoKey(view, 'authorId')` passes in both phases.
   - Test: `bin/test server/session`
 
-- [ ] Task 4.4: Vote screen (TDD)
+- [x] Task 4.4: Vote screen (TDD)
   - File: `src/screens/Vote.tsx`, `src/screens/Vote.test.tsx`, `src/screens/SessionScreen.tsx`
   - Change:
     - Tests first (jsdom):
@@ -412,14 +412,14 @@ interface CommandContext { now: number; newId: () => string }
     - Wire it into `SessionScreen`.
   - Test: `bin/test src`
 
-- [ ] Task 4.5: Results screen (TDD)
+- [x] Task 4.5: Results screen (TDD)
   - File: `src/screens/Results.tsx`, `src/screens/Results.test.tsx`, `src/screens/SessionScreen.tsx`
   - Change:
     - Tests first (jsdom): the screen shows the challenge and the ranked groups with their rank, label, vote count and constituent questions, in order. It has no advance control or editing controls.
     - In `SessionScreen`, the results phase renders `Results` even without a participantId. That makes the page view-only by link (D17).
   - Test: `bin/test src`, then `bin/typecheck`
 
-- [ ] Task 4.6: End-to-end manual verification
+- [x] Task 4.6: End-to-end manual verification
   - Test:
     1. Run `bin/dev`. Do a full session in two browsers: create, join, burst, consolidate, vote, results.
     2. During voting, neither browser can see the other's votes. A 4th vote is blocked.
@@ -427,4 +427,4 @@ interface CommandContext { now: number; newId: () => string }
     4. Restart the server, then open the session link in a third, fresh private window. The results show without joining.
     5. `bin/test` and `bin/typecheck` both pass.
 
-- [ ] Commit Phase 4: `git add -A && git commit -m "Dot voting with hidden tallies and persistent ranked results"`
+- [x] Commit Phase 4: `git add -A && git commit -m "Dot voting with hidden tallies and persistent ranked results"`

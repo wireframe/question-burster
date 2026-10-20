@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ClientCommand, Phase } from '../../shared/protocol'
+import { VOTES_PER_PERSON, type ClientCommand, type Phase } from '../../shared/protocol'
 import { CommandRejected } from './errors'
 import { applyCommand, createSession, singletonGroups } from './reducer'
 import type { CommandContext, GroupDraft, SessionState } from './state'
@@ -28,6 +28,7 @@ describe('createSession', () => {
       questions: {},
       groupingStatus: 'idle',
       groups: {},
+      votes: {},
     })
   })
 
@@ -364,6 +365,8 @@ describe('consolidation commands', () => {
     it.each([
       { type: 'merge', sourceGroupId: 'missing', targetGroupId: 'g1' },
       { type: 'merge', sourceGroupId: 'g2', targetGroupId: 'missing' },
+      { type: 'merge', sourceGroupId: 'constructor', targetGroupId: 'g1' },
+      { type: 'merge', sourceGroupId: 'g2', targetGroupId: '__proto__' },
     ] as const)('rejects a missing group in %j', (command) => {
       expect(() => apply(consolidating(), command)).toThrow(new CommandRejected('Group not found'))
     })
@@ -386,8 +389,8 @@ describe('consolidation commands', () => {
       })
     })
 
-    it('rejects a missing group', () => {
-      expect(() => apply(consolidating(), { ...split, groupId: 'missing' })).toThrow(new CommandRejected('Group not found'))
+    it.each(['missing', 'constructor', '__proto__'])('rejects the missing group %s', (groupId) => {
+      expect(() => apply(consolidating(), { ...split, groupId })).toThrow(new CommandRejected('Group not found'))
     })
 
     it('rejects a question that is not in the group', () => {
@@ -420,14 +423,102 @@ describe('consolidation commands', () => {
       expect(() => apply(consolidating(), { ...reword, label })).toThrow(new CommandRejected('Label must be 1–280 characters'))
     })
 
-    it('rejects a missing group', () => {
-      expect(() => apply(consolidating(), { ...reword, groupId: 'missing' })).toThrow(new CommandRejected('Group not found'))
+    it.each(['missing', 'constructor', '__proto__'])('rejects the missing group %s', (groupId) => {
+      expect(() => apply(consolidating(), { ...reword, groupId })).toThrow(new CommandRejected('Group not found'))
     })
 
     it('rejects a stale baseVersion', () => {
       expect(() => apply(consolidating(), { ...reword, baseVersion: 0 })).toThrow(
         new CommandRejected('Group changed, refresh'),
       )
+    })
+  })
+})
+
+describe('vote commands', () => {
+  const bob = { id: 'p2', resumeToken: 't2', name: 'Bob', done: false }
+  const groups = {
+    g1: { id: 'g1', label: 'Timing', version: 0, questionIds: ['q1'] },
+    g2: { id: 'g2', label: 'Who pays?', version: 0, questionIds: ['q2'] },
+  }
+
+  function voting(overrides: Partial<SessionState> = {}): SessionState {
+    return buildSession({ phase: 'vote', participants: { p1: ada, p2: bob }, groups, ...overrides })
+  }
+
+  type VoteCommand = Extract<ClientCommand, { type: 'castVote' | 'removeVote' }>
+
+  function apply(state: SessionState, command: VoteCommand, actorId = 'p1') {
+    return applyCommand(state, { actorId, command, ctx: contextWithIds() })
+  }
+
+  const castVote: VoteCommand = { type: 'castVote', groupId: 'g1' }
+  const removeVote: VoteCommand = { type: 'removeVote', groupId: 'g1' }
+
+  describe.each([castVote, removeVote])('$type', (command) => {
+    const withOneVote = { p1: { g1: 1 } }
+
+    it.each(['consolidate', 'results'] as const)('rejects during %s', (phase) => {
+      expect(() => apply(voting({ phase, votes: withOneVote }), command)).toThrow(
+        new CommandRejected('Voting is not open'),
+      )
+    })
+
+    it('rejects someone who is not a participant', () => {
+      expect(() => apply(voting({ votes: withOneVote }), command, 'stranger')).toThrow(
+        new CommandRejected('Join the session first'),
+      )
+    })
+
+    it.each(['missing', 'constructor', '__proto__'])('rejects the unknown group %s', (groupId) => {
+      expect(() => apply(voting({ votes: withOneVote }), { ...command, groupId })).toThrow(
+        new CommandRejected('Group not found'),
+      )
+    })
+
+    it('does not mutate the input state', () => {
+      const state = voting({ votes: withOneVote })
+
+      apply(state, command)
+
+      expect(state).toEqual(voting({ votes: withOneVote }))
+    })
+  })
+
+  describe('castVote', () => {
+    it("adds a vote to the actor's count for the group", () => {
+      expect(apply(voting(), castVote).state.votes).toEqual({ p1: { g1: 1 } })
+    })
+
+    it('stacks votes on the same group', () => {
+      const state = voting({ votes: { p1: { g1: 1 }, p2: { g1: 2 } } })
+
+      expect(apply(state, castVote).state.votes).toEqual({ p1: { g1: 2 }, p2: { g1: 2 } })
+    })
+
+    it('rejects a vote beyond VOTES_PER_PERSON', () => {
+      const state = voting({ votes: { p1: { g1: 2, g2: 1 } } })
+
+      expect(VOTES_PER_PERSON).toBe(3)
+      expect(() => apply(state, castVote)).toThrow(new CommandRejected('No votes left'))
+    })
+
+    it('frees a vote once one is removed', () => {
+      const state = apply(voting({ votes: { p1: { g1: 1, g2: 2 } } }), removeVote).state
+
+      expect(apply(state, castVote).state.votes.p1).toEqual({ g1: 1, g2: 2 })
+    })
+  })
+
+  describe('removeVote', () => {
+    it("takes a vote off the actor's count for the group", () => {
+      const state = voting({ votes: { p1: { g1: 2 } } })
+
+      expect(apply(state, removeVote).state.votes).toEqual({ p1: { g1: 1 } })
+    })
+
+    it.each<SessionState['votes']>([{}, { p1: { g1: 0 } }, { p1: { g2: 1 } }])('rejects removing from a group with no votes in %j', (votes) => {
+      expect(() => apply(voting({ votes }), removeVote)).toThrow(new CommandRejected('No vote to remove'))
     })
   })
 })
