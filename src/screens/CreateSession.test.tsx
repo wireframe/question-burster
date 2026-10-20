@@ -25,6 +25,14 @@ describe('CreateSession', () => {
     )
   })
 
+  it('offers tips on what makes a good challenge', async () => {
+    const { user } = renderScreen()
+
+    await user.click(screen.getByText('What makes a good challenge?'))
+
+    expect(screen.getByText('Write it as a statement, not a question. The burst does the reframing.')).toBeVisible()
+  })
+
   it('submits the challenge with the duration converted to seconds', async () => {
     const { createSession, onCreated, user } = renderScreen()
 

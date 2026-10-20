@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { WorkflowStepper } from './WorkflowStepper'
 
-const BURST_HINT = 'Write as many questions as you can. No answers, no explanations — just questions.'
+const BURST_HINT = 'Write as many questions as you can, at least 15. No answers, no explanations — just questions.'
 
 function progressSteps() {
   return within(screen.getByRole('list', { name: 'Session progress' })).getAllByRole('listitem')

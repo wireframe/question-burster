@@ -5,7 +5,16 @@ import {
   MIN_BURST_SECONDS,
   type CreateSessionRequest,
 } from '../../shared/protocol'
+import { GuidePanel } from '../components/GuidePanel'
 import { card, fieldLabel, primaryButton, textField } from '../components/ui'
+
+const CHALLENGE_TIPS = [
+  'Pick something you care about, one that makes your heart beat fast.',
+  'Hit the highlights. Too much detail narrows the questions.',
+  'Say what would change for the better if it were solved.',
+  'Say why you’re stuck: why it hasn’t been solved yet.',
+  'Write it as a statement, not a question. The burst does the reframing.',
+]
 
 interface CreateSessionProps {
   createSession: (request: CreateSessionRequest) => Promise<string>
@@ -54,6 +63,7 @@ export function CreateSession({ createSession, onCreated }: CreateSessionProps) 
             value={challenge}
             onChange={(e) => setChallenge(e.target.value)}
           />
+          <GuidePanel title="What makes a good challenge?" tips={CHALLENGE_TIPS} />
         </div>
         <div className="space-y-2">
           <label htmlFor="burst-minutes" className={fieldLabel}>Burst length (minutes)</label>
