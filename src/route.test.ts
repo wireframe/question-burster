@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRoute } from './route'
+import { parseRoute, sessionPath } from './route'
 
 describe('parseRoute', () => {
   it('maps the root path to the create screen', () => {
@@ -12,5 +12,11 @@ describe('parseRoute', () => {
 
   it.each(['/s/', '/s/abc/extra', '/other'])('maps %s to not found', (path) => {
     expect(parseRoute(path)).toEqual({ name: 'notFound' })
+  })
+})
+
+describe('sessionPath', () => {
+  it('builds the path that parseRoute maps back to the session', () => {
+    expect(parseRoute(sessionPath('abc'))).toEqual({ name: 'session', id: 'abc' })
   })
 })

@@ -8,9 +8,9 @@ import { Vote } from './Vote'
 const voteView = buildView({
   phase: 'vote',
   participants: [
-    { id: 'p1', name: 'Ada', questionCount: 0, done: true },
-    { id: 'p2', name: 'Grace', questionCount: 0, done: true },
-    { id: 'p3', name: 'Linus', questionCount: 0, done: false },
+    { id: 'p1', name: 'Ada', done: true },
+    { id: 'p2', name: 'Grace', done: true },
+    { id: 'p3', name: 'Linus', done: false },
   ],
   groups: [
     {
@@ -26,7 +26,6 @@ const voteView = buildView({
   ],
   myVotes: { g1: 2 },
   votesRemaining: 1,
-  votersDone: 1,
 })
 
 function renderVote(view: SessionView = voteView) {

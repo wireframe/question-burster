@@ -2,6 +2,10 @@ export type Route = { name: 'create' } | { name: 'session'; id: string } | { nam
 
 const SESSION_PATH = /^\/s\/([^/]+)$/
 
+export function sessionPath(id: string): string {
+  return `/s/${id}`
+}
+
 export function parseRoute(pathname: string): Route {
   if (pathname === '/') return { name: 'create' }
   const sessionMatch = SESSION_PATH.exec(pathname)

@@ -27,6 +27,10 @@ function sessionWithTwoParticipants(): SessionState {
   })
 }
 
+function doneFlags(state: SessionState): boolean[] {
+  return projectForClient(state, 'p1').participants.map((participant) => participant.done)
+}
+
 describe('projectForClient', () => {
   it('projects session fields and participants for a participant viewer', () => {
     const view = projectForClient(sessionWithTwoParticipants(), 'p1')
@@ -38,15 +42,14 @@ describe('projectForClient', () => {
       phase: 'burst',
       endsAt: 5_000,
       participants: [
-        { id: 'p1', name: 'Ada', questionCount: 0, done: false },
-        { id: 'p2', name: 'Grace', questionCount: 0, done: true },
+        { id: 'p1', name: 'Ada', done: false },
+        { id: 'p2', name: 'Grace', done: true },
       ],
       myQuestions: [],
       groupingStatus: 'idle',
       groups: [],
       myVotes: {},
       votesRemaining: 3,
-      votersDone: 0,
       results: null,
     })
   })
@@ -65,6 +68,16 @@ describe('projectForClient', () => {
     expectNoKey(projectForClient(sessionWithTwoParticipants(), 'p1'), 'resumeToken')
   })
 
+  describe('step completion', () => {
+    it('marks done the participants who pressed I\'m done during the burst', () => {
+      expect(doneFlags(sessionWithTwoParticipants())).toEqual([false, true])
+    })
+
+    it.each(['lobby', 'consolidate', 'results'] as const)('marks nobody done during %s', (phase) => {
+      expect(doneFlags(sessionWithQuestionsFromBoth({ phase }))).toEqual([false, false])
+    })
+  })
+
   describe('burst privacy', () => {
     it('shows a participant only their own questions', () => {
       const view = projectForClient(sessionWithQuestionsFromBoth(), 'p1')
@@ -75,10 +88,8 @@ describe('projectForClient', () => {
       ])
     })
 
-    it('counts every participant\'s questions', () => {
-      const view = projectForClient(sessionWithQuestionsFromBoth(), 'p1')
-
-      expect(view.participants.map((participant) => participant.questionCount)).toEqual([2, 1])
+    it('never exposes per-person question counts', () => {
+      expectNoKey(projectForClient(sessionWithQuestionsFromBoth(), 'p1'), 'questionCount')
     })
 
     it('never leaks another participant\'s question text', () => {
@@ -99,12 +110,6 @@ describe('projectForClient', () => {
       const view = projectForClient(sessionWithQuestionsFromBoth({ phase: 'consolidate' }), 'p1')
 
       expect(view.myQuestions).toEqual([])
-    })
-
-    it.each(['consolidate', 'vote', 'results'] as const)('hides question counts during %s', (phase) => {
-      const view = projectForClient(sessionWithQuestionsFromBoth({ phase }), 'p1')
-
-      expect(view.participants.map((participant) => participant.questionCount)).toEqual([0, 0])
     })
   })
 
@@ -176,8 +181,14 @@ describe('projectForClient', () => {
       expect(projectForClient(votingSession(), 'p1').votesRemaining).toBe(2)
     })
 
-    it('counts participants who used all their votes', () => {
-      expect(projectForClient(votingSession(), 'p1').votersDone).toBe(1)
+    it('marks done only the participants who used all their votes', () => {
+      expect(doneFlags(votingSession())).toEqual([false, true])
+    })
+
+    it('ignores the burst done flag while voting', () => {
+      const state = votingSession({ votes: {} })
+
+      expect(doneFlags(state)).toEqual([false, false])
     })
 
     it('hides results until the results phase', () => {

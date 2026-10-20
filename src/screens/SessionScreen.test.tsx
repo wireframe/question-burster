@@ -84,6 +84,18 @@ describe('SessionScreen', () => {
     expect(screen.getByRole('button', { name: 'Start burst' })).toBeInTheDocument()
   })
 
+  it('invites others with a link to this session from the lobby', () => {
+    renderWithSession({ participantId: 'p1' })
+
+    expect(screen.getByRole('textbox', { name: 'Session link' })).toHaveValue(`${location.origin}/s/s1`)
+  })
+
+  it('shows every participant in the header', () => {
+    renderWithSession({ participantId: 'p1', view: buildView({ participants: [{ id: 'p1', name: 'Ada', done: false }] }) })
+
+    expect(screen.getByTitle('Ada (you)')).toBeInTheDocument()
+  })
+
   it('shows the burst with its countdown to a participant in the burst', () => {
     vi.useFakeTimers({ now: 100_000, toFake: ['Date'] })
     renderWithSession({ participantId: 'p1', clockOffset: 5_000, view: buildView({ phase: 'burst', endsAt: 230_000 }) })

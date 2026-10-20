@@ -8,8 +8,8 @@ import { Burst } from './Burst'
 const burstView = buildView({
   phase: 'burst',
   participants: [
-    { id: 'p1', name: 'Ada', questionCount: 2, done: false },
-    { id: 'p2', name: 'Grace', questionCount: 3, done: true },
+    { id: 'p1', name: 'Ada', done: false },
+    { id: 'p2', name: 'Grace', done: true },
   ],
   myQuestions: [
     { id: 'q1', text: 'What slows us down?' },
@@ -74,14 +74,5 @@ describe('Burst', () => {
     renderBurst({ participantId: 'p2' })
 
     expect(screen.queryByRole('button', { name: 'I\'m done' })).not.toBeInTheDocument()
-  })
-
-  it('lists participants with question counts and done markers but no question text', () => {
-    renderBurst({ participantId: 'p2' })
-
-    const participants = screen.getByRole('list', { name: 'Participants' })
-    expect(within(participants).getByText('Ada · 2')).toBeInTheDocument()
-    expect(within(participants).getByText('Grace · 3 ✓')).toBeInTheDocument()
-    expect(within(participants).queryByText('What slows us down?')).not.toBeInTheDocument()
   })
 })

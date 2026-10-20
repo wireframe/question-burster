@@ -2,6 +2,7 @@ import { isFinalPhase, type SessionView } from '../../shared/protocol'
 import { RejectionNotice } from '../components/RejectionNotice'
 import { SessionHeader } from '../components/SessionHeader'
 import { pageColumn } from '../components/ui'
+import { sessionPath } from '../route'
 import { useCountdown } from '../session/useCountdown'
 import { useSession, type Session } from '../session/useSession'
 import { Burst } from './Burst'
@@ -54,7 +55,8 @@ function SessionLayout(props: LiveSessionProps) {
   const { session, view, secondsRemaining } = props
   return (
     <div className="space-y-6">
-      <SessionHeader view={view} secondsRemaining={secondsRemaining} send={canAct(session, view) ? session.send : null} />
+      <SessionHeader view={view} secondsRemaining={secondsRemaining} send={canAct(session, view) ? session.send : null}
+        participantId={session.participantId} />
       <div className={pageColumn}>
         <SessionContent {...props} />
       </div>
@@ -76,7 +78,7 @@ function StatusMessage({ children }: { children: string }) {
 function PhaseScreen({ session, view, secondsRemaining }: LiveSessionProps) {
   switch (view.phase) {
     case 'lobby':
-      return <Lobby view={view} />
+      return <Lobby inviteUrl={inviteUrlFor(view)} copyText={copyToClipboard} />
     case 'burst':
       return <Burst view={view} send={session.send} secondsRemaining={secondsRemaining} participantId={session.participantId} />
     case 'consolidate':
@@ -86,4 +88,12 @@ function PhaseScreen({ session, view, secondsRemaining }: LiveSessionProps) {
     case 'results':
       return <Results view={view} />
   }
+}
+
+function inviteUrlFor(view: SessionView): string {
+  return location.origin + sessionPath(view.id)
+}
+
+function copyToClipboard(text: string): Promise<void> {
+  return navigator.clipboard.writeText(text)
 }

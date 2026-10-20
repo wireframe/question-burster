@@ -24,13 +24,13 @@ export function WorkflowStepper({ phase, children }: WorkflowStepperProps) {
 }
 
 const MARKER_STYLES: Record<StepStatus, string> = {
-  done: 'bg-accent-soft text-accent border-accent',
+  done: 'bg-accent-soft text-accent/60 border-accent/35',
   current: 'bg-accent text-white border-accent shadow-card ring-4 ring-accent/15',
   upcoming: 'bg-surface text-ink-muted border-line',
 }
 
 const LABEL_STYLES: Record<StepStatus, string> = {
-  done: 'text-ink',
+  done: 'text-ink-muted',
   current: 'font-bold text-accent',
   upcoming: 'text-ink-muted',
 }
@@ -56,7 +56,7 @@ function StepItem({ step, status, hintId }: StepItemProps) {
 }
 
 function StepConnector({ done }: { done: boolean }) {
-  return <span aria-hidden="true" className={`absolute top-3.5 left-[calc(50%+1.25rem)] right-[calc(-50%+1.25rem)] h-0.5 -translate-y-1/2 rounded-full ${done ? 'bg-accent' : 'bg-line'}`} />
+  return <span aria-hidden="true" className={`absolute top-3.5 left-[calc(50%+1.25rem)] right-[calc(-50%+1.25rem)] h-0.5 -translate-y-1/2 rounded-full ${done ? 'bg-accent/35' : 'bg-line'}`} />
 }
 
 function CheckIcon() {

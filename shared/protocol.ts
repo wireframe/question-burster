@@ -54,7 +54,6 @@ export type ServerMessage =
 export interface ParticipantView {
   id: string
   name: string
-  questionCount: number
   done: boolean
 }
 
@@ -92,6 +91,5 @@ export interface SessionView {
   groups: GroupView[]
   myVotes: Record<string, number>
   votesRemaining: number
-  votersDone: number
   results: ResultView[] | null
 }

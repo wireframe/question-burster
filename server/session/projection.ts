@@ -24,33 +24,27 @@ export function projectForClient(state: SessionState, viewerId: string | null): 
     groups: projectGroups(state),
     myVotes: myVotes(state, viewerId),
     votesRemaining: votesRemaining(state, viewerId),
-    votersDone: votersDone(state),
     results: projectResults(state),
   }
 }
 
 function projectParticipants(state: SessionState): ParticipantView[] {
-  const counts = visibleQuestionCounts(state)
-  return Object.values(state.participants).map((participant) => projectParticipant(participant, counts))
-}
-
-function projectParticipant(participant: Participant, counts: Map<string, number>): ParticipantView {
-  return {
+  return Object.values(state.participants).map((participant) => ({
     id: participant.id,
     name: participant.name,
-    questionCount: counts.get(participant.id) ?? 0,
-    done: participant.done,
+    done: hasCompletedStep(state, participant),
+  }))
+}
+
+function hasCompletedStep(state: SessionState, participant: Participant): boolean {
+  switch (state.phase) {
+    case 'burst':
+      return participant.done
+    case 'vote':
+      return votesUsedBy(state, participant.id) === VOTES_PER_PERSON
+    default:
+      return false
   }
-}
-
-function visibleQuestionCounts(state: SessionState): Map<string, number> {
-  return state.phase === 'burst' ? questionCountsByAuthor(state) : new Map()
-}
-
-function questionCountsByAuthor(state: SessionState): Map<string, number> {
-  const counts = new Map<string, number>()
-  Object.values(state.questions).forEach(({ authorId }) => counts.set(authorId, (counts.get(authorId) ?? 0) + 1))
-  return counts
 }
 
 function myQuestions(state: SessionState, viewerId: string | null): QuestionView[] {
@@ -85,10 +79,6 @@ function myVotes(state: SessionState, viewerId: string | null): Record<string, n
 function votesRemaining(state: SessionState, viewerId: string | null): number {
   if (viewerId === null) return 0
   return VOTES_PER_PERSON - votesUsedBy(state, viewerId)
-}
-
-function votersDone(state: SessionState): number {
-  return Object.keys(state.participants).filter((id) => votesUsedBy(state, id) === VOTES_PER_PERSON).length
 }
 
 function projectResults(state: SessionState): ResultView[] | null {

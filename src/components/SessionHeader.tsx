@@ -5,6 +5,7 @@ import { pluralize } from '../screens/pluralize'
 import { countdownUrgency, formatClock, type CountdownUrgency } from '../session/countdown'
 import { stepFor } from '../session/steps'
 import { LogoMark } from './LogoMark'
+import { ParticipantAvatars } from './ParticipantAvatars'
 import { compactPrimaryButton, pageColumn } from './ui'
 import { VoteDots } from './VoteDots'
 import { WorkflowStepper } from './WorkflowStepper'
@@ -15,13 +16,17 @@ export interface SessionHeaderProps {
   view: SessionView
   secondsRemaining: number
   send: Send | null
+  participantId: string | null
 }
 
 export function SessionHeader(props: SessionHeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-paper/85 pt-3 pb-3 shadow-[0_8px_16px_-12px_rgb(31_36_48/0.25)] backdrop-blur-md sm:pt-5 sm:pb-4">
       <div className={`${pageColumn} space-y-3`}>
-        <ChallengeTitle challenge={props.view.challenge} />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <ChallengeTitle challenge={props.view.challenge} />
+          <ParticipantAvatars participants={props.view.participants} viewerId={props.participantId} />
+        </div>
         <WorkflowStepper phase={props.view.phase}>
           {phaseStatus(props)}
           {props.send && <NextStepButton view={props.view} send={props.send} />}
@@ -33,7 +38,7 @@ export function SessionHeader(props: SessionHeaderProps) {
 
 function ChallengeTitle({ challenge }: { challenge: string }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex min-w-0 items-start gap-3">
       <a href="/" aria-label="Question Burst home" className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
         <LogoMark />
       </a>
@@ -72,13 +77,10 @@ function Countdown({ secondsRemaining }: { secondsRemaining: number }) {
 
 function VoteTally({ view }: { view: SessionView }) {
   return (
-    <div className="flex flex-col text-sm leading-tight">
-      <span className="inline-flex items-center gap-2 font-semibold">
-        <VoteDots filled={view.votesRemaining} total={VOTES_PER_PERSON} />
-        <span>{pluralize(view.votesRemaining, 'vote')} left</span>
-      </span>
-      <span className="text-ink-muted">{view.votersDone} of {view.participants.length} people done</span>
-    </div>
+    <span className="inline-flex items-center gap-2 text-sm font-semibold">
+      <VoteDots filled={view.votesRemaining} total={VOTES_PER_PERSON} />
+      <span>{pluralize(view.votesRemaining, 'vote')} left</span>
+    </span>
   )
 }
 

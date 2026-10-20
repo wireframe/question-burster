@@ -1,12 +1,12 @@
 import { createSessionRequest } from './api'
 import { AppShell } from './components/AppShell'
 import { pageColumn, primaryButton } from './components/ui'
-import { parseRoute, type Route } from './route'
+import { parseRoute, sessionPath, type Route } from './route'
 import { CreateSession } from './screens/CreateSession'
 import { SessionScreen } from './screens/SessionScreen'
 
 function goToSession(id: string) {
-  location.href = '/s/' + id
+  location.href = sessionPath(id)
 }
 
 export function App() {

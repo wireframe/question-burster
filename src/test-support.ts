@@ -13,7 +13,6 @@ export function buildView(overrides: Partial<SessionView> = {}): SessionView {
     groups: [],
     myVotes: {},
     votesRemaining: 3,
-    votersDone: 0,
     results: null,
     ...overrides,
   }

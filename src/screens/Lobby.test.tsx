@@ -1,20 +1,42 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { buildView } from '../test-support'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Lobby } from './Lobby'
 
-const view = buildView({
-  participants: [
-    { id: 'p1', name: 'Ada', questionCount: 0, done: false },
-    { id: 'p2', name: 'Grace', questionCount: 0, done: false },
-  ],
-})
+const inviteUrl = 'https://burst.example/s/s1'
+
+function renderLobby(copyText = vi.fn().mockResolvedValue(undefined)) {
+  render(<Lobby inviteUrl={inviteUrl} copyText={copyText} />)
+  return { copyText, user: userEvent.setup() }
+}
 
 describe('Lobby', () => {
-  it('shows the participant names', () => {
-    render(<Lobby view={view} />)
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
-    expect(screen.getByText('Ada')).toBeInTheDocument()
-    expect(screen.getByText('Grace')).toBeInTheDocument()
+  it('shows the session link to invite others', () => {
+    renderLobby()
+
+    expect(screen.getByRole('textbox', { name: 'Session link' })).toHaveValue(inviteUrl)
+  })
+
+  it('copies the session link', async () => {
+    const { copyText, user } = renderLobby()
+
+    await user.click(screen.getByRole('button', { name: 'Copy link' }))
+
+    expect(copyText).toHaveBeenCalledWith(inviteUrl)
+  })
+
+  it('confirms the copy briefly', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    renderLobby()
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Copy link' })))
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(2_000))
+    expect(screen.getByRole('button', { name: 'Copy link' })).toBeInTheDocument()
   })
 })

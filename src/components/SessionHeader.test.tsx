@@ -7,7 +7,7 @@ import { SessionHeader, type SessionHeaderProps } from './SessionHeader'
 
 function renderHeader(overrides: Partial<SessionHeaderProps> = {}) {
   const send = vi.fn()
-  render(<SessionHeader view={buildView()} secondsRemaining={0} send={send} {...overrides} />)
+  render(<SessionHeader view={buildView()} secondsRemaining={0} send={send} participantId={null} {...overrides} />)
   return { send, user: userEvent.setup() }
 }
 
@@ -82,20 +82,21 @@ describe('SessionHeader', () => {
     expect(screen.queryByRole('timer')).not.toBeInTheDocument()
   })
 
-  it('shows votes left and how many people are done during the vote', () => {
-    renderHeader({
-      view: viewIn('vote', {
-        participants: [
-          { id: 'p1', name: 'Ada', questionCount: 0, done: true },
-          { id: 'p2', name: 'Grace', questionCount: 0, done: false },
-          { id: 'p3', name: 'Linus', questionCount: 0, done: false },
-        ],
-        votesRemaining: 1,
-        votersDone: 1,
-      }),
-    })
+  it('shows the votes left during the vote, leaving who is done to the participant avatars', () => {
+    renderHeader({ view: viewIn('vote', { votesRemaining: 1 }) })
 
     expect(within(currentStepCallout()).getByText('1 vote left')).toBeInTheDocument()
-    expect(within(currentStepCallout()).getByText('1 of 3 people done')).toBeInTheDocument()
+    expect(within(currentStepCallout()).queryByText(/people done/)).not.toBeInTheDocument()
+  })
+
+  it('shows each participant with the viewer and done state', () => {
+    renderHeader({
+      view: viewIn('vote', { participants: [{ id: 'p1', name: 'Ada', done: true }, { id: 'p2', name: 'Grace', done: false }] }),
+      participantId: 'p2',
+    })
+
+    const participants = screen.getByRole('list', { name: 'Participants' })
+    expect(within(participants).getByTitle('Ada, done')).toBeInTheDocument()
+    expect(within(participants).getByTitle('Grace (you)')).toBeInTheDocument()
   })
 })

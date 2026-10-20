@@ -143,6 +143,7 @@ A collaborative web app based on Hal Gregersen's Question Burst. Each participan
 - Reveal after results: may still cause self-censorship.
 **Chosen:** Anonymous in review
 **Rationale:** Reduces social influence and encourages bold questions. The app still needs to track per-participant completion for the lobby and burst, but question authorship isn't shown during consolidation or voting.
+**Amendment (2026-10-20, user decision after seeing the restyle):** Question notes are colored by author with a stable, anonymous color per participant, so people can see which questions came from the same person without seeing who. The color is never shown next to a name or avatar. Accepted cost: someone who knows a colleague's style may infer the mapping.
 
 ## D14: Hosting
 **Question:** Where will the prototype run?
