@@ -8,7 +8,7 @@ This is a personal prototype that runs locally. Planning artifacts live in `docs
 
 A sticky header keeps the challenge, the five steps and each person's status in view. The current step's callout says what to do now and holds the button that moves everyone to the next step.
 
-**1. Create a session.** Write the challenge you want questions about and pick a burst length (4 minutes by default).
+**1. Create a session.** Describe the challenge in a few sentences: the problem, what would change if it were solved, and why you're stuck. Write it as a statement, not a question, so it doesn't steer the questions. Then pick a burst length (4 minutes by default).
 
 ![Create a session](docs/screenshots/create-session.png)
 

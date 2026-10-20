@@ -12,7 +12,7 @@ describe('createSessionRequest', () => {
 
   it('posts the input as JSON and resolves the new session id', async () => {
     const fetchMock = stubFetch(201, { id: 'abc' })
-    const input = { challenge: 'How might we?', burstSeconds: 240 }
+    const input = { challenge: 'Onboarding is slow', burstSeconds: 240 }
 
     await expect(createSessionRequest(input)).resolves.toBe('abc')
     expect(fetchMock).toHaveBeenCalledWith('/api/sessions', {

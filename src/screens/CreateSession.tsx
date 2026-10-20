@@ -49,7 +49,7 @@ export function CreateSession({ createSession, onCreated }: CreateSessionProps) 
             id="challenge"
             required
             rows={3}
-            placeholder="How might we…"
+            placeholder="The problem is… If we solved it… We’re stuck because…"
             className={`${textField} resize-y`}
             value={challenge}
             onChange={(e) => setChallenge(e.target.value)}

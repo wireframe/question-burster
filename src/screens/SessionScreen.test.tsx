@@ -60,9 +60,9 @@ describe('SessionScreen', () => {
   })
 
   it('shows the challenge as the page heading on the join screen', () => {
-    renderWithSession({ view: buildView({ challenge: 'How might we ship faster?' }) })
+    renderWithSession({ view: buildView({ challenge: 'Releases take a month to reach customers' }) })
 
-    expect(screen.getByRole('heading', { level: 1, name: 'How might we ship faster?' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Releases take a month to reach customers' })).toBeInTheDocument()
   })
 
   it('shows the countdown to someone joining during the burst', () => {

@@ -18,11 +18,11 @@ function join(state: SessionState, command: { name: string; resumeToken?: string
 
 describe('createSession', () => {
   it('starts in the lobby with no participants', () => {
-    const state = createSession({ challenge: 'How might we?', burstSeconds: 60 }, contextWithIds('s1'))
+    const state = createSession({ challenge: 'Onboarding is slow', burstSeconds: 60 }, contextWithIds('s1'))
 
     expect(state).toEqual({
       id: 's1',
-      challenge: 'How might we?',
+      challenge: 'Onboarding is slow',
       burstSeconds: 60,
       phase: 'lobby',
       endsAt: null,
@@ -35,9 +35,9 @@ describe('createSession', () => {
   })
 
   it('trims the challenge', () => {
-    const state = createSession({ challenge: '  How might we?  ' }, contextWithIds('s1'))
+    const state = createSession({ challenge: '  Onboarding is slow  ' }, contextWithIds('s1'))
 
-    expect(state.challenge).toBe('How might we?')
+    expect(state.challenge).toBe('Onboarding is slow')
   })
 
   it('rejects an empty challenge', () => {
