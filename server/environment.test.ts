@@ -6,7 +6,7 @@ const REQUIRED = { ANTHROPIC_API_KEY: 'test-key' }
 describe('loadEnvironment', () => {
   it('defaults the port and database path', () => {
     expect(loadEnvironment(REQUIRED)).toEqual({
-      port: 3001,
+      port: 3280,
       databasePath: 'data/question-burst.db',
       anthropicApiKey: 'test-key',
     })
