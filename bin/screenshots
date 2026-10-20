@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+server_port="${SCREENSHOT_SERVER_PORT:-3002}"
+client_port="${SCREENSHOT_CLIENT_PORT:-5199}"
+out_dir="${1:-docs/screenshots}"
+work_dir="$(mktemp -d)"
+
+stop_servers() {
+  [[ -n "${servers_pid:-}" ]] && kill "$servers_pid" 2>/dev/null && wait "$servers_pid" 2>/dev/null
+  rm -rf "$work_dir"
+}
+trap stop_servers EXIT
+
+wait_for() {
+  for _ in $(seq 1 60); do curl -s -o /dev/null "$1" && return 0; sleep 0.5; done
+  echo "Timed out waiting for $1; see $work_dir/servers.log" >&2
+  cat "$work_dir/servers.log" >&2
+  return 1
+}
+
+[[ -f .env ]] || { echo "Missing .env with ANTHROPIC_API_KEY (grouping calls Claude)" >&2; exit 1; }
+
+PORT="$server_port" DATABASE_PATH="$work_dir/screenshots.db" npx concurrently -k \
+  "vite --port $client_port --strictPort" \
+  "tsx --env-file=.env server/index.ts" > "$work_dir/servers.log" 2>&1 &
+servers_pid=$!
+
+wait_for "http://localhost:$server_port/"
+wait_for "http://localhost:$client_port/"
+mkdir -p "$out_dir"
+node scripts/capture-screenshots.mjs "http://localhost:$client_port" "$out_dir"

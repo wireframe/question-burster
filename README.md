@@ -52,6 +52,9 @@ The server will not start without `ANTHROPIC_API_KEY` in `.env`.
 | `bin/dev` | Runs the Vite client (http://localhost:5173) and the API/WebSocket server (port 3001) together |
 | `bin/test` | Runs the Vitest suite; pass a path to narrow it, e.g. `bin/test server/session` |
 | `bin/typecheck` | Runs `tsc --noEmit` across `src`, `server` and `shared` |
+| `bin/screenshots` | Runs a scripted two-person session in Chrome and saves the README screenshots to `docs/screenshots/` (or a folder you pass) |
+
+`bin/screenshots` starts its own server on ports 3002 and 5199 with a throwaway database, so it doesn't touch a running `bin/dev`. It needs Google Chrome (set `CHROME_PATH` if it isn't in `/Applications`) and the `ANTHROPIC_API_KEY` in `.env`, because grouping calls Claude. Override the ports with `SCREENSHOT_SERVER_PORT` and `SCREENSHOT_CLIENT_PORT`.
 
 ## Configuration
 
