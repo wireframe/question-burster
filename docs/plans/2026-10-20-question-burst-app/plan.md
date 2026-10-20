@@ -36,7 +36,7 @@ Structure: [structure.md](structure.md)
 // shared/protocol.ts
 type Phase = 'lobby' | 'burst' | 'consolidate' | 'vote' | 'results'
 type ClientCommand =
-  | { type: 'join'; name: string; participantId?: string }
+  | { type: 'join'; name: string; resumeToken?: string }   // rejoin only by secret token (Phase 1 review fix)
   | { type: 'advance'; fromPhase: Phase }
   | { type: 'submitQuestion'; text: string }                                   // Phase 2
   | { type: 'markDone' }                                                       // Phase 2
@@ -45,7 +45,7 @@ type ClientCommand =
   | { type: 'reword'; groupId: string; label: string; baseVersion: number }    // Phase 3
   | { type: 'castVote'; groupId: string } | { type: 'removeVote'; groupId: string } // Phase 4
 type ServerMessage =
-  | { type: 'welcome'; participantId: string | null; serverNow: number }
+  | { type: 'welcome'; participantId: string | null; resumeToken?: string; serverNow: number }
   | { type: 'state'; view: SessionView }
   | { type: 'rejected'; reason: string }
 // SessionView grows per phase: id, challenge, burstSeconds, phase, endsAt,
@@ -55,7 +55,7 @@ type ServerMessage =
 // server/session/state.ts — never sent to clients
 interface SessionState {
   id: string; challenge: string; burstSeconds: number; phase: Phase; endsAt: number | null
-  participants: Record<string, { id: string; name: string; done: boolean }>
+  participants: Record<string, { id: string; name: string; done: boolean; resumeToken: string }>  // resumeToken never projected
   questions: Record<string, { id: string; authorId: string; text: string }>   // Phase 2
   groupingStatus: 'idle' | 'pending' | 'ready'                                // Phase 3
   groups: Record<string, { id: string; label: string; version: number; questionIds: string[] }> // Phase 3
@@ -68,7 +68,7 @@ interface CommandContext { now: number; newId: () => string }
 
 ## Phase 1: Walking skeleton (create, join, lobby, advance)
 
-- [ ] Task 1.1: Initialize the repo and tooling
+- [x] Task 1.1: Initialize the repo and tooling
   - File: `package.json`, `tsconfig.json`, `vitest.config.ts`, `vite.config.ts`, `.gitignore`, `.env.example`, `index.html`
   - Change:
     - Run `git init`, then `npm init -y` and set `"type": "module"`.
@@ -83,12 +83,12 @@ interface CommandContext { now: number; newId: () => string }
     - `index.html`: mounts `#root` and loads `/src/main.tsx`.
   - Test: `npm run typecheck` exits 0. `npm test` reports "no test files" without crashing.
 
-- [ ] Task 1.2: Add the bin wrappers
+- [x] Task 1.2: Add the bin wrappers
   - File: `bin/dev`, `bin/test`, `bin/typecheck`
   - Change: three executable scripts (`chmod +x`), each with `#!/usr/bin/env bash`, `set -euo pipefail` and `cd "$(dirname "$0")/.."`. They run `exec npm run dev`, `exec npm test -- "$@"` and `exec npm run typecheck` respectively.
   - Test: `bin/typecheck` exits 0.
 
-- [ ] Task 1.3: Shared protocol types plus the env loader (TDD)
+- [x] Task 1.3: Shared protocol types plus the env loader (TDD)
   - File: `shared/protocol.ts`, `server/environment.ts`, `server/environment.test.ts`
   - Change:
     - Write `environment.test.ts` first, with four tests: `loadEnvironment({})` returns `{port: 3001, databasePath: 'data/question-burst.db'}`; it respects `PORT` and `DATABASE_PATH`; it throws `Error('Invalid PORT')` for `PORT=abc`; and the error message never contains the bad value.
@@ -96,7 +96,7 @@ interface CommandContext { now: number; newId: () => string }
     - Add `Phase`, `PHASE_ORDER`, the Phase 1 parts of `ClientCommand` (`join`, `advance`), `ServerMessage`, and `SessionView` with `{id, challenge, burstSeconds, phase, endsAt, participants}` to `shared/protocol.ts`.
   - Test: `bin/test server/environment.test.ts`
 
-- [ ] Task 1.4: Session state, creation and the `join` reducer (TDD)
+- [x] Task 1.4: Session state, creation and the `join` reducer (TDD)
   - File: `server/session/state.ts`, `server/session/reducer.ts`, `server/session/reducer.test.ts`, `server/session/errors.ts`
   - Change:
     - Tests first:
@@ -106,7 +106,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement `SessionState` (Phase 1 fields only), `CommandContext`, `CommandRejected extends Error`, `createSession`, and `applyCommand(state, {actorId, command, ctx})`. It returns `{state, participantId?}` without mutating its input; `join` returns the participant's id.
   - Test: `bin/test server/session`
 
-- [ ] Task 1.5: The `advance` reducer (TDD)
+- [x] Task 1.5: The `advance` reducer (TDD)
   - File: `server/session/reducer.ts`, `server/session/reducer.test.ts`
   - Change:
     - Tests first:
@@ -117,7 +117,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement it as small helpers: `nextPhase(phase)` and `enterPhase(state, phase, ctx)`.
   - Test: `bin/test server/session`
 
-- [ ] Task 1.6: Client projection (TDD)
+- [x] Task 1.6: Client projection (TDD)
   - File: `server/session/projection.ts`, `server/session/projection.test.ts`
   - Change:
     - Tests first: `projectForClient(state, viewerId)` returns a `SessionView` with participants as `{id, name, questionCount: 0, done}`. It works when `viewerId` is `null` (a spectator).
@@ -125,7 +125,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement the projection.
   - Test: `bin/test server/session`
 
-- [ ] Task 1.7: SQLite session repository (TDD)
+- [x] Task 1.7: SQLite session repository (TDD)
   - File: `server/db.ts`, `server/db.test.ts`
   - Change:
     - Tests first, using `':memory:'`: `save(state)` then `load(id)` returns an equal state, `load('missing')` returns `undefined`, and a second `save` overwrites the first.
@@ -133,7 +133,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement `createSessionRepository(db)` returning `{load, save}`. `save` uses `INSERT … ON CONFLICT(id) DO UPDATE`.
   - Test: `bin/test server/db.test.ts`
 
-- [ ] Task 1.8: Room hub and HTTP/WS server (TDD integration)
+- [x] Task 1.8: Room hub and HTTP/WS server (TDD integration)
   - File: `server/rooms.ts`, `server/app.ts`, `server/app.test.ts`, `server/index.ts`
   - Change:
     - Test first. Start `createServer({repository, clock})` on port 0, where `clock = {now: () => Date.now(), newId: () => crypto.randomUUID()}`.
@@ -151,7 +151,7 @@ interface CommandContext { now: number; newId: () => string }
     - `server/index.ts` wires `loadEnvironment(process.env)`, `openDatabase` and `createServer`, then calls `listen(port)`.
   - Test: `bin/test server/app.test.ts`
 
-- [ ] Task 1.9: Client routing, create and join screens (TDD)
+- [x] Task 1.9: Client routing, create and join screens (TDD)
   - File: `src/main.tsx`, `src/App.tsx`, `src/route.ts`, `src/route.test.ts`, `src/screens/CreateSession.tsx`, `src/screens/CreateSession.test.tsx`, `src/styles.css`
   - Change:
     - Tests first:
@@ -163,7 +163,7 @@ interface CommandContext { now: number; newId: () => string }
       - `styles.css` is a minimal readable layout.
   - Test: `bin/test src`
 
-- [ ] Task 1.10: `useSession` hook, lobby and placeholder screens (TDD)
+- [x] Task 1.10: `useSession` hook, lobby and placeholder screens (TDD)
   - File: `src/session/useSession.ts`, `src/session/sessionClient.ts`, `src/session/sessionClient.test.ts`, `src/screens/{JoinSession,Lobby,Placeholder,SessionScreen}.tsx`, `src/screens/Lobby.test.tsx`
   - Change:
     - Tests first:
@@ -175,7 +175,7 @@ interface CommandContext { now: number; newId: () => string }
       - Every screen has an "Advance" control that sends `advance` with the current phase.
   - Test: `bin/test src`, then `bin/typecheck`
 
-- [ ] Task 1.11: Manual verification and README
+- [x] Task 1.11: Manual verification and README
   - File: `README.md`
   - Change: document `bin/dev`, `bin/test`, `bin/typecheck`, the `.env` setup and the data location.
   - Test: run `bin/dev` and open `http://localhost:5173`.
@@ -184,7 +184,7 @@ interface CommandContext { now: number; newId: () => string }
     3. Click Advance in B. Both windows show the burst placeholder.
     4. Stop and restart `bin/dev`. After reloading, both windows still show burst with A and B present.
 
-- [ ] Commit Phase 1: `git add -A && git commit -m "Walking skeleton: create, join, lobby, phase advance with SQLite persistence"`
+- [x] Commit Phase 1: `git add -A && git commit -m "Walking skeleton: create, join, lobby, phase advance with SQLite persistence"`
 
 ## Phase 2: Private timed burst
 
