@@ -20,8 +20,13 @@ function keepFirstClaims(drafts: GroupDraft[], unclaimed: Set<string>): GroupDra
 }
 
 function withLabel(group: GroupDraft, textById: Map<string, string>): GroupDraft {
-  const label = group.label.trim() || textById.get(group.questionIds[0])!
-  return { ...group, label: label.slice(0, MAX_LABEL_LENGTH) }
+  return { ...group, label: chooseLabel(group, textById).slice(0, MAX_LABEL_LENGTH) }
+}
+
+function chooseLabel(group: GroupDraft, textById: Map<string, string>): string {
+  const firstQuestionText = textById.get(group.questionIds[0])!
+  if (group.questionIds.length === 1) return firstQuestionText
+  return group.label.trim() || firstQuestionText
 }
 
 function appendUngrouped(groups: GroupDraft[], questions: QuestionText[]): GroupDraft[] {

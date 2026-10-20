@@ -9,13 +9,39 @@ const questions = [
 ]
 
 describe('normalizeGroups', () => {
-  it('keeps well-formed groups as they are', () => {
+  it('keeps well-formed multi-question groups as they are', () => {
     const drafts = [
       { label: 'Timing', questionIds: ['q1', 'q3'] },
-      { label: 'Ownership', questionIds: ['q2'] },
+      { label: 'Ownership', questionIds: ['q2', 'q4'] },
+    ]
+    const fourQuestions = [...questions, { id: 'q4', text: 'Who signs off?' }]
+
+    expect(normalizeGroups(drafts, fourQuestions)).toEqual(drafts)
+  })
+
+  it("labels a single-question group with that question's own text", () => {
+    const drafts = [
+      { label: 'How do we price the product?', questionIds: ['q2'] },
+      { label: 'Timing', questionIds: ['q1', 'q3'] },
     ]
 
-    expect(normalizeGroups(drafts, questions)).toEqual(drafts)
+    expect(normalizeGroups(drafts, questions)).toEqual([
+      { label: 'Who decides?', questionIds: ['q2'] },
+      { label: 'Timing', questionIds: ['q1', 'q3'] },
+    ])
+  })
+
+  it('labels a group left with one surviving question by that question text', () => {
+    const drafts = [{ label: 'Pricing', questionIds: ['ghost', 'q3'] }]
+
+    expect(normalizeGroups(drafts, questions)[0]).toEqual({ label: 'What if we wait?', questionIds: ['q3'] })
+  })
+
+  it('caps a single-question label at the maximum label length', () => {
+    const longText = 'y'.repeat(MAX_LABEL_LENGTH + 5)
+    const drafts = [{ label: 'Long', questionIds: ['long'] }]
+
+    expect(normalizeGroups(drafts, [{ id: 'long', text: longText }])[0].label).toBe('y'.repeat(MAX_LABEL_LENGTH))
   })
 
   it('drops unknown ids', () => {
@@ -32,7 +58,7 @@ describe('normalizeGroups', () => {
 
     expect(normalizeGroups(drafts, questions)).toEqual([
       { label: 'A', questionIds: ['q1', 'q2'] },
-      { label: 'B', questionIds: ['q3'] },
+      { label: 'What if we wait?', questionIds: ['q3'] },
     ])
   })
 
@@ -49,7 +75,7 @@ describe('normalizeGroups', () => {
     const drafts = [{ label: 'Ownership', questionIds: ['q2'] }]
 
     expect(normalizeGroups(drafts, questions)).toEqual([
-      { label: 'Ownership', questionIds: ['q2'] },
+      { label: 'Who decides?', questionIds: ['q2'] },
       { label: 'Ungrouped', questionIds: ['q1', 'q3'] },
     ])
   })
