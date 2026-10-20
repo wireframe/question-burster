@@ -15,6 +15,7 @@ export const MIN_BURST_SECONDS = 30
 export const MAX_BURST_SECONDS = 1800
 export const MAX_NAME_LENGTH = 40
 export const MAX_QUESTION_LENGTH = 280
+export const MAX_LABEL_LENGTH = MAX_QUESTION_LENGTH
 
 export const SESSIONS_PATH = '/api/sessions'
 export const WS_PATH = '/ws'
@@ -37,6 +38,9 @@ export type ClientCommand =
   | { type: 'advance'; fromPhase: Phase }
   | { type: 'submitQuestion'; text: string }
   | { type: 'markDone' }
+  | { type: 'merge'; sourceGroupId: string; targetGroupId: string }
+  | { type: 'split'; groupId: string; questionId: string }
+  | { type: 'reword'; groupId: string; label: string; baseVersion: number }
 
 export type ServerMessage =
   | { type: 'welcome'; participantId: string | null; resumeToken?: string; serverNow: number }
@@ -55,6 +59,15 @@ export interface QuestionView {
   text: string
 }
 
+export type GroupingStatus = 'idle' | 'pending' | 'ready'
+
+export interface GroupView {
+  id: string
+  label: string
+  version: number
+  questions: QuestionView[]
+}
+
 export interface SessionView {
   id: string
   challenge: string
@@ -62,6 +75,7 @@ export interface SessionView {
   phase: Phase
   endsAt: number | null
   participants: ParticipantView[]
-  /** The viewer's own questions; filled only during the burst. */
   myQuestions: QuestionView[]
+  groupingStatus: GroupingStatus
+  groups: GroupView[]
 }

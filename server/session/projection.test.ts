@@ -41,6 +41,8 @@ describe('projectForClient', () => {
         { id: 'p2', name: 'Grace', questionCount: 0, done: true },
       ],
       myQuestions: [],
+      groupingStatus: 'idle',
+      groups: [],
     })
   })
 
@@ -93,6 +95,48 @@ describe('projectForClient', () => {
 
       expect(view.myQuestions).toEqual([])
       expect(view.participants.map((participant) => participant.questionCount)).toEqual([2, 1])
+    })
+  })
+
+  describe('consolidation', () => {
+    function consolidatingSession(): SessionState {
+      return sessionWithQuestionsFromBoth({
+        phase: 'consolidate',
+        groupingStatus: 'ready',
+        groups: {
+          g1: { id: 'g1', label: 'Zebra concerns', version: 2, questionIds: ['q3', 'q1'] },
+          g2: { id: 'g2', label: 'Apple worries', version: 1, questionIds: ['q2'] },
+        },
+      })
+    }
+
+    it('passes groupingStatus through', () => {
+      expect(projectForClient(consolidatingSession(), 'p1').groupingStatus).toBe('ready')
+    })
+
+    it('projects groups sorted by label with questions in group order', () => {
+      const view = projectForClient(consolidatingSession(), 'p1')
+
+      expect(view.groups).toEqual([
+        { id: 'g2', label: 'Apple worries', version: 1, questions: [{ id: 'q2', text: 'Grace secret' }] },
+        {
+          id: 'g1',
+          label: 'Zebra concerns',
+          version: 2,
+          questions: [
+            { id: 'q3', text: 'Ada asks two' },
+            { id: 'q1', text: 'Ada asks one' },
+          ],
+        },
+      ])
+    })
+
+    it('never exposes authorId in groups', () => {
+      expectNoKey(projectForClient(consolidatingSession(), 'p1'), 'authorId')
+    })
+
+    it('leaves myQuestions empty outside the burst', () => {
+      expect(projectForClient(consolidatingSession(), 'p1').myQuestions).toEqual([])
     })
   })
 })

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSession, type Session } from '../session/useSession'
 import { buildView } from '../test-support'
@@ -15,10 +16,12 @@ function renderWithSession(overrides: Partial<Session>) {
     rejoining: false,
     send: vi.fn(),
     join: vi.fn(),
+    dismissRejection: vi.fn(),
     ...overrides,
   }
   vi.mocked(useSession).mockReturnValue(session)
   render(<SessionScreen sessionId="s1" />)
+  return session
 }
 
 describe('SessionScreen', () => {
@@ -59,10 +62,16 @@ describe('SessionScreen', () => {
     expect(screen.getByText('2:05')).toBeInTheDocument()
   })
 
-  it('shows the placeholder to a participant in a later phase', () => {
-    renderWithSession({ participantId: 'p1', view: buildView({ phase: 'consolidate' }) })
+  it('shows consolidation to a participant in the consolidate phase', () => {
+    renderWithSession({ participantId: 'p1', view: buildView({ phase: 'consolidate', groupingStatus: 'pending' }) })
 
-    expect(screen.getByText('Phase: consolidate')).toBeInTheDocument()
+    expect(screen.getByText('Grouping similar questions…')).toBeInTheDocument()
+  })
+
+  it('shows the placeholder to a participant in a later phase', () => {
+    renderWithSession({ participantId: 'p1', view: buildView({ phase: 'vote' }) })
+
+    expect(screen.getByText('Phase: vote')).toBeInTheDocument()
   })
 
   it('lets a spectator see results without joining', () => {
@@ -76,5 +85,13 @@ describe('SessionScreen', () => {
     renderWithSession({ lastRejection: 'Session not found' })
 
     expect(screen.getByRole('alert')).toHaveTextContent('Session not found')
+  })
+
+  it('dismisses the rejection through the session', async () => {
+    const session = renderWithSession({ lastRejection: 'Session not found' })
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Dismiss' }))
+
+    expect(session.dismissRejection).toHaveBeenCalled()
   })
 })

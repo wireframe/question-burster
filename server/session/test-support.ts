@@ -1,4 +1,3 @@
-/** Shared test fixtures and assertions for session code. */
 import { expect } from 'vitest'
 import type { SessionState } from './state'
 
@@ -11,6 +10,8 @@ export function buildSession(overrides: Partial<SessionState> = {}): SessionStat
     endsAt: null,
     participants: {},
     questions: {},
+    groupingStatus: 'idle',
+    groups: {},
     ...overrides,
   }
 }

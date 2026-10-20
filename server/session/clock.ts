@@ -1,4 +1,3 @@
-/** Time and id generation, injected so session code stays deterministic under test. */
 import type { CommandContext } from './state'
 
 export interface Clock {

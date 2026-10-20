@@ -12,7 +12,6 @@ function useTickingNow(): number {
   return now
 }
 
-/** Whole seconds left until `endsAt` on the server clock, refreshed every tick; 0 when there is no deadline. */
 export function useCountdown(endsAt: number | null, clockOffset: number): number {
   const now = useTickingNow()
   return endsAt == null ? 0 : secondsRemaining({ endsAt, clockOffset, now })

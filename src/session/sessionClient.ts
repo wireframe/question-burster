@@ -30,6 +30,7 @@ export interface SessionClient {
   getSnapshot(): SessionSnapshot
   send(command: ClientCommand): void
   join(name: string): void
+  dismissRejection(): void
   connect(): void
   close(): void
 }
@@ -51,7 +52,6 @@ function sessionSocketPath(sessionId: string): string {
   return `${WS_PATH}?session=${encodeURIComponent(sessionId)}`
 }
 
-/** Keeps the latest server state for one session socket and rejoins with the stored identity. */
 export function createSessionClient(
   { socketFactory, storage }: SessionClientDependencies,
   sessionId: string,
@@ -82,6 +82,10 @@ export function createSessionClient(
     const { resumeToken } = readIdentity()
     storeIdentity({ resumeToken, name })
     send({ type: 'join', name, resumeToken })
+  }
+
+  function dismissRejection() {
+    update({ lastRejection: null })
   }
 
   function rejoinWithStoredIdentity() {
@@ -134,6 +138,7 @@ export function createSessionClient(
     getSnapshot: () => snapshot,
     send,
     join,
+    dismissRejection,
     connect,
     close,
   }

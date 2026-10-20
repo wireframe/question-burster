@@ -1,4 +1,3 @@
-/** A command or input the session refuses; its message is the reason shown to the actor. */
 import { MAX_BURST_SECONDS, MIN_BURST_SECONDS } from '../../shared/protocol'
 
 export class CommandRejected extends Error {

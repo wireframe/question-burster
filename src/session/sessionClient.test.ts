@@ -109,6 +109,15 @@ describe('createSessionClient', () => {
     expect(client.getSnapshot().lastRejection).toBe('wrong phase')
   })
 
+  it('clears the last rejection when dismissed', () => {
+    const { client, socket } = connect()
+
+    socket.receive({ type: 'rejected', reason: 'wrong phase' })
+    client.dismissRejection()
+
+    expect(client.getSnapshot().lastRejection).toBeNull()
+  })
+
   it('stores the resume token and name after joining', () => {
     const { client, socket } = connect()
 

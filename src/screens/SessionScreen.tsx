@@ -1,7 +1,9 @@
 import { isFinalPhase, type SessionView } from '../../shared/protocol'
+import { RejectionNotice } from '../components/RejectionNotice'
 import { useCountdown } from '../session/useCountdown'
 import { useSession, type Session } from '../session/useSession'
 import { Burst } from './Burst'
+import { Consolidate } from './Consolidate'
 import { JoinSession } from './JoinSession'
 import { Lobby } from './Lobby'
 import { Placeholder } from './Placeholder'
@@ -10,7 +12,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   const session = useSession(sessionId)
   return (
     <>
-      {session.lastRejection && <p role="alert">{session.lastRejection}</p>}
+      {session.lastRejection && <RejectionNotice message={session.lastRejection} onDismiss={session.dismissRejection} />}
       <SessionBody session={session} />
     </>
   )
@@ -28,7 +30,6 @@ function SessionBody({ session }: { session: Session }) {
   return <PhaseScreen session={session} view={view} />
 }
 
-/** A session whose first state has arrived. */
 interface LiveSessionProps {
   session: Session
   view: SessionView
@@ -40,6 +41,8 @@ function PhaseScreen({ session, view }: LiveSessionProps) {
       return <Lobby view={view} send={session.send} />
     case 'burst':
       return <BurstPhase session={session} view={view} />
+    case 'consolidate':
+      return <Consolidate view={view} send={session.send} />
     default:
       return <Placeholder view={view} send={session.send} />
   }

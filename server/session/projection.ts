@@ -1,6 +1,5 @@
-/** Turns authoritative session state into the view a given client may see. */
-import type { ParticipantView, QuestionView, SessionView } from '../../shared/protocol'
-import type { Participant, Question, SessionState } from './state'
+import type { GroupView, ParticipantView, QuestionView, SessionView } from '../../shared/protocol'
+import type { Group, Participant, Question, SessionState } from './state'
 
 export function projectForClient(state: SessionState, viewerId: string | null): SessionView {
   return {
@@ -11,6 +10,8 @@ export function projectForClient(state: SessionState, viewerId: string | null): 
     endsAt: state.endsAt,
     participants: projectParticipants(state),
     myQuestions: myQuestions(state, viewerId),
+    groupingStatus: state.groupingStatus,
+    groups: projectGroups(state),
   }
 }
 
@@ -45,4 +46,19 @@ function questionsBy(state: SessionState, authorId: string): Question[] {
 
 function toQuestionView(question: Question): QuestionView {
   return { id: question.id, text: question.text }
+}
+
+function projectGroups(state: SessionState): GroupView[] {
+  return Object.values(state.groups)
+    .map((group) => projectGroup(group, state))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+function projectGroup(group: Group, state: SessionState): GroupView {
+  return {
+    id: group.id,
+    label: group.label,
+    version: group.version,
+    questions: group.questionIds.map((questionId) => toQuestionView(state.questions[questionId])),
+  }
 }

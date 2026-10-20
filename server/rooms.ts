@@ -1,24 +1,26 @@
-/**
- * Live sessions: a Room applies each socket's commands to its session, persists the result,
- * and broadcasts each socket its own projection. It also ends the burst when its time runs out.
- * The RoomHub loads rooms on first use.
- */
 import type { ClientCommand, ServerMessage } from '../shared/protocol'
+import type { GroupingInput } from './ai/group-questions'
 import type { SessionRepository } from './db'
 import { contextFrom, type Clock } from './session/clock'
 import { parseCommand } from './session/commands'
 import { CommandRejected } from './session/errors'
 import { projectForClient } from './session/projection'
-import { applyCommand, type CommandResult, type JoinedParticipant } from './session/reducer'
-import type { SessionState } from './session/state'
+import {
+  applyCommand,
+  isAwaitingGroups,
+  singletonGroups,
+  type CommandResult,
+  type JoinedParticipant,
+} from './session/reducer'
+import type { GroupDraft, SessionState, SystemCommand } from './session/state'
 import { burstTimeoutMs } from './session/timer'
 
 export interface RoomDependencies {
   repository: SessionRepository
   clock: Clock
+  group: (input: GroupingInput) => Promise<GroupDraft[]>
 }
 
-/** The slice of a ws WebSocket a Room uses. */
 export interface RoomSocket {
   send(data: string): void
   on(event: 'message' | 'close' | 'error', listener: (data: unknown) => void): unknown
@@ -53,7 +55,7 @@ class Room {
     private state: SessionState,
     private readonly deps: RoomDependencies,
   ) {
-    this.scheduleBurstTimeout()
+    this.startPhaseEffects()
   }
 
   connect(socket: RoomSocket): void {
@@ -84,7 +86,11 @@ class Room {
     this.commit(this.apply(SYSTEM_ACTOR, END_BURST))
   }
 
-  private apply(actorId: string | null, command: ClientCommand): CommandResult {
+  private completeGrouping(groups: GroupDraft[]): void {
+    this.commit(this.apply(SYSTEM_ACTOR, { type: 'groupingCompleted', groups }))
+  }
+
+  private apply(actorId: string | null, command: ClientCommand | SystemCommand): CommandResult {
     return applyCommand(this.state, { actorId, command, ctx: contextFrom(this.deps.clock) })
   }
 
@@ -93,8 +99,13 @@ class Room {
     const previousPhase = this.state.phase
     this.state = result.state
     this.deps.repository.save(this.state)
-    if (this.state.phase !== previousPhase) this.scheduleBurstTimeout()
+    if (this.state.phase !== previousPhase) this.startPhaseEffects()
     this.broadcast()
+  }
+
+  private startPhaseEffects(): void {
+    this.scheduleBurstTimeout()
+    this.startGroupingIfPending()
   }
 
   private scheduleBurstTimeout(): void {
@@ -102,6 +113,20 @@ class Room {
     const delay = burstTimeoutMs(this.state, this.deps.clock.now())
     if (delay === null) return
     this.burstTimeout = setTimeout(() => this.endBurst(), delay)
+  }
+
+  private startGroupingIfPending(): void {
+    if (!isAwaitingGroups(this.state)) return
+    void this.requestGroups().then((groups) => this.completeGrouping(groups))
+  }
+
+  private async requestGroups(): Promise<GroupDraft[]> {
+    try {
+      return await this.deps.group(groupingInputFrom(this.state))
+    } catch (error) {
+      console.error(`Grouping failed for session ${this.state.id}: ${messageOf(error)}`)
+      return singletonGroups(Object.values(this.state.questions))
+    }
   }
 
   private identify(socket: RoomSocket, { participantId, resumeToken }: JoinedParticipant): void {
@@ -127,8 +152,16 @@ class Room {
   }
 }
 
-/** ws already closes the socket on a protocol error; without a listener the emit would crash the process. */
+// ws closes the socket itself on a protocol error, but emitting 'error' with no listener crashes the process.
 function ignoreProtocolError(): void {}
+
+function groupingInputFrom({ challenge, questions }: SessionState): GroupingInput {
+  return { challenge, questions: Object.values(questions).map(({ id, text }) => ({ id, text })) }
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
 
 function send(socket: RoomSocket, message: ServerMessage): void {
   socket.send(JSON.stringify(message))

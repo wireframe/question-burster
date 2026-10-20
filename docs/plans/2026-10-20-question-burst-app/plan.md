@@ -261,14 +261,14 @@ interface CommandContext { now: number; newId: () => string }
 
 ## Phase 3: AI grouping and collaborative consolidation
 
-- [ ] Task 3.1: Require the API key in env (TDD)
+- [x] Task 3.1: Require the API key in env (TDD)
   - File: `server/environment.ts`, `server/environment.test.ts`, `.env.example`, `README.md`
   - Change:
     - Tests first: a missing `ANTHROPIC_API_KEY` throws an `Error` whose message names `ANTHROPIC_API_KEY`, following `cbs-2026/server/environment.ts:19-24`. The returned config includes `anthropicApiKey`, and no error message ever includes the key's value.
     - Add `ANTHROPIC_API_KEY=` (empty) to `.env.example` and update the README. It must be an organization Anthropic key, kept in `.env`, never committed. Question text is sent only to Anthropic.
   - Test: `bin/test server/environment.test.ts`
 
-- [ ] Task 3.2: Normalize grouping output (TDD)
+- [x] Task 3.2: Normalize grouping output (TDD)
   - File: `server/ai/normalize-groups.ts`, `server/ai/normalize-groups.test.ts`
   - Change:
     - Tests first for `normalizeGroups(drafts, questionIds)`. It takes `drafts: {label: string; questionIds: string[]}[]` and returns the same shape.
@@ -280,7 +280,7 @@ interface CommandContext { now: number; newId: () => string }
     - Implement it.
   - Test: `bin/test server/ai`
 
-- [ ] Task 3.3: `groupQuestions` with an injected LLM port (TDD)
+- [x] Task 3.3: `groupQuestions` with an injected LLM port (TDD)
   - File: `server/ai/group-questions.ts`, `server/ai/group-questions.test.ts`
   - Change:
     - Define `interface StructuredLlm { completeJson(request: {system: string; user: string; schema: object}): Promise<unknown> }`.
@@ -292,7 +292,7 @@ interface CommandContext { now: number; newId: () => string }
     - System prompt: "Group questions that ask essentially the same thing. Keep distinct questions in their own group. Label each group with one clear question that captures it."
   - Test: `bin/test server/ai`
 
-- [ ] Task 3.4: Real Claude adapter
+- [x] Task 3.4: Real Claude adapter
   - File: `server/ai/claude-client.ts`
   - Change:
     - **Load the `claude-api` skill first** and confirm the current structured-outputs request shape (`output_config.format` with `type: 'json_schema'`; see research.md "Semantic grouping with Claude") and how to read the response for the installed `@anthropic-ai/sdk` version.
@@ -303,7 +303,7 @@ interface CommandContext { now: number; newId: () => string }
     - No unit test, since this is a thin adapter over the SDK. It's verified in Task 3.10.
   - Test: `bin/typecheck`
 
-- [ ] Task 3.5: Consolidation state and the `groupingCompleted` system command (TDD)
+- [x] Task 3.5: Consolidation state and the `groupingCompleted` system command (TDD)
   - File: `server/session/state.ts`, `server/session/reducer.ts`, `server/session/reducer.test.ts`
   - Change:
     - Tests first:
@@ -314,7 +314,7 @@ interface CommandContext { now: number; newId: () => string }
     - Define `SystemCommand` in `server/session/state.ts`. It is server-only, never in `shared/protocol.ts`.
   - Test: `bin/test server/session`
 
-- [ ] Task 3.6: Room triggers grouping, with a fallback (TDD)
+- [x] Task 3.6: Room triggers grouping, with a fallback (TDD)
   - File: `server/rooms.ts`, `server/rooms.test.ts`, `server/app.ts`, `server/index.ts`
   - Change:
     - Tests first. Inject `group: (input) => Promise<GroupDraft[]>` into `createServer` and `RoomHub`.
@@ -324,7 +324,7 @@ interface CommandContext { now: number; newId: () => string }
     - Wire it up in `index.ts`: `group = (input) => groupQuestions(createClaudeLlm({apiKey}), input)`.
   - Test: `bin/test server`
 
-- [ ] Task 3.7: `merge`, `split` and `reword` reducers (TDD)
+- [x] Task 3.7: `merge`, `split` and `reword` reducers (TDD)
   - File: `shared/protocol.ts`, `server/session/reducer.ts`, `server/session/reducer.test.ts`
   - Change: tests first, all only valid during `consolidate` with status `ready`, from a participant.
     - `merge`:
@@ -338,14 +338,14 @@ interface CommandContext { now: number; newId: () => string }
       - Rejected with "Group changed, refresh" when `baseVersion !== version`.
   - Test: `bin/test server/session`
 
-- [ ] Task 3.8: Consolidation projection (TDD)
+- [x] Task 3.8: Consolidation projection (TDD)
   - File: `server/session/projection.ts`, `server/session/projection.test.ts`, `shared/protocol.ts`
   - Change:
     - Tests first: in `consolidate`, the view includes `groupingStatus` and `groups: [{id, label, version, questions: [{id, text}]}]`, sorted by label for stable display. `expectNoKey(view, 'authorId')` passes. `myQuestions` is empty outside `burst`.
     - Implement it.
   - Test: `bin/test server/session`
 
-- [ ] Task 3.9: Consolidate screen (TDD)
+- [x] Task 3.9: Consolidate screen (TDD)
   - File: `src/screens/Consolidate.tsx`, `src/components/QuestionGroup.tsx`, `src/screens/Consolidate.test.tsx`, `src/screens/SessionScreen.tsx`
   - Change:
     - Tests first (jsdom):
@@ -358,7 +358,7 @@ interface CommandContext { now: number; newId: () => string }
     - Wire it into `SessionScreen`.
   - Test: `bin/test src`, then `bin/typecheck`
 
-- [ ] Task 3.10: Manual verification with real Claude
+- [x] Task 3.10: Manual verification with real Claude (real grouping: churn pair grouped, pricing alone, ~3.2s; fallback, sync and stale reword verified by script)
   - Test:
     1. Copy `.env.example` to `.env` and add an Anthropic API key, then run `bin/dev`.
     2. Run a 1-minute burst in two browsers. A submits "Why do customers churn?" and "How do we price the product?". B submits "What makes clients leave us?".
@@ -367,7 +367,7 @@ interface CommandContext { now: number; newId: () => string }
     5. A stale reword shows the rejection notice.
     6. Temporarily set an invalid key and confirm the fallback gives one group per question.
 
-- [ ] Commit Phase 3: `git add -A && git commit -m "Claude-assisted grouping and collaborative consolidation"`
+- [x] Commit Phase 3: `git add -A && git commit -m "Claude-assisted grouping and collaborative consolidation"`
 
 ## Phase 4: Dot voting and results
 

@@ -26,7 +26,7 @@ let clients: TestClient[]
 
 beforeEach(async () => {
   repository = createSessionRepository(openDatabase(':memory:'))
-  server = createServer({ repository, clock: systemClock })
+  server = createServer({ repository, clock: systemClock, group: () => new Promise(() => {}) })
   await new Promise<void>((resolve) => server.listen(0, resolve))
   baseUrl = `127.0.0.1:${(server.address() as AddressInfo).port}`
   clients = []

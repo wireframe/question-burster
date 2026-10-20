@@ -1,4 +1,3 @@
-/** The HTTP API plus the WebSocket endpoint at WS_PATH?session=<id>, served from one http.Server. */
 import express, { type NextFunction, type Request, type Response } from 'express'
 import http from 'node:http'
 import { WebSocketServer, type WebSocket } from 'ws'

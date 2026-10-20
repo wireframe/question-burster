@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { Phase } from '../../shared/protocol'
+import type { ClientCommand, Phase } from '../../shared/protocol'
 import { CommandRejected } from './errors'
-import { applyCommand, createSession } from './reducer'
-import type { CommandContext, SessionState } from './state'
+import { applyCommand, createSession, singletonGroups } from './reducer'
+import type { CommandContext, GroupDraft, SessionState } from './state'
 import { buildSession } from './test-support'
 import { BURST_GRACE_MS } from './timer'
 
@@ -26,6 +26,8 @@ describe('createSession', () => {
       endsAt: null,
       participants: {},
       questions: {},
+      groupingStatus: 'idle',
+      groups: {},
     })
   })
 
@@ -128,7 +130,22 @@ describe('applyCommand advance', () => {
     ['consolidate', 'vote'],
     ['vote', 'results'],
   ] as const)('moves from %s to %s', (from, to) => {
-    expect(advance(buildSession({ phase: from }), from).state.phase).toBe(to)
+    expect(advance(buildSession({ phase: from, groupingStatus: 'ready' }), from).state.phase).toBe(to)
+  })
+
+  it('starts grouping with no groups when entering consolidate', () => {
+    const state = buildSession({ phase: 'burst', groups: { g1: { id: 'g1', label: 'Old', version: 2, questionIds: [] } } })
+
+    const result = advance(state, 'burst')
+
+    expect(result.state.groupingStatus).toBe('pending')
+    expect(result.state.groups).toEqual({})
+  })
+
+  it('rejects leaving consolidate while grouping is in progress', () => {
+    const state = buildSession({ phase: 'consolidate', groupingStatus: 'pending' })
+
+    expect(() => advance(state, 'consolidate')).toThrow(new CommandRejected('Grouping in progress'))
   })
 
   it('returns the same state for a stale fromPhase', () => {
@@ -248,5 +265,183 @@ describe('applyCommand markDone', () => {
     expect(() => markDone(buildSession({ phase: 'burst', participants: { p1: ada } }), 'stranger')).toThrow(
       CommandRejected,
     )
+  })
+})
+
+describe('applyCommand groupingCompleted', () => {
+  const drafts: GroupDraft[] = [
+    { label: 'Why now?', questionIds: ['q1', 'q2'] },
+    { label: 'Who pays?', questionIds: ['q3'] },
+  ]
+
+  function completeGrouping(state: SessionState) {
+    const command = { type: 'groupingCompleted' as const, groups: drafts }
+    return applyCommand(state, { actorId: null, command, ctx: contextWithIds('g1', 'g2') })
+  }
+
+  it('creates version 0 groups with new ids and marks grouping ready', () => {
+    const result = completeGrouping(buildSession({ phase: 'consolidate', groupingStatus: 'pending' }))
+
+    expect(result.state.groupingStatus).toBe('ready')
+    expect(result.state.groups).toEqual({
+      g1: { id: 'g1', label: 'Why now?', version: 0, questionIds: ['q1', 'q2'] },
+      g2: { id: 'g2', label: 'Who pays?', version: 0, questionIds: ['q3'] },
+    })
+  })
+
+  it.each([
+    ['burst', 'pending'],
+    ['consolidate', 'ready'],
+    ['consolidate', 'idle'],
+  ] as const)('is ignored during %s with grouping %s', (phase, groupingStatus) => {
+    const state = buildSession({ phase, groupingStatus })
+
+    expect(completeGrouping(state).state).toBe(state)
+  })
+})
+
+describe('consolidation commands', () => {
+  const questions = {
+    q1: { id: 'q1', authorId: 'p1', text: 'Why now?' },
+    q2: { id: 'q2', authorId: 'p1', text: 'Why today?' },
+    q3: { id: 'q3', authorId: 'p1', text: 'Who pays?' },
+  }
+  const whyGroup = { id: 'g1', label: 'Timing', version: 1, questionIds: ['q1', 'q2'] }
+  const whoGroup = { id: 'g2', label: 'Who pays?', version: 0, questionIds: ['q3'] }
+
+  function consolidating(overrides: Partial<SessionState> = {}): SessionState {
+    return buildSession({
+      phase: 'consolidate',
+      groupingStatus: 'ready',
+      participants: { p1: ada },
+      questions,
+      groups: { g1: whyGroup, g2: whoGroup },
+      ...overrides,
+    })
+  }
+
+  type ConsolidationCommand = Extract<ClientCommand, { type: 'merge' | 'split' | 'reword' }>
+
+  function apply(state: SessionState, command: ConsolidationCommand, actorId = 'p1') {
+    return applyCommand(state, { actorId, command, ctx: contextWithIds('g-new') })
+  }
+
+  const merge: ConsolidationCommand = { type: 'merge', sourceGroupId: 'g2', targetGroupId: 'g1' }
+  const split: ConsolidationCommand = { type: 'split', groupId: 'g1', questionId: 'q2' }
+  const reword: ConsolidationCommand = { type: 'reword', groupId: 'g1', label: 'When?', baseVersion: 1 }
+
+  describe.each([merge, split, reword])('$type', (command) => {
+    it('rejects outside consolidate', () => {
+      expect(() => apply(consolidating({ phase: 'vote' }), command)).toThrow(CommandRejected)
+    })
+
+    it('rejects while grouping is pending', () => {
+      expect(() => apply(consolidating({ groupingStatus: 'pending' }), command)).toThrow(
+        new CommandRejected('Grouping in progress'),
+      )
+    })
+
+    it('rejects someone who is not a participant', () => {
+      expect(() => apply(consolidating(), command, 'stranger')).toThrow(new CommandRejected('Join the session first'))
+    })
+
+    it('does not mutate the input state', () => {
+      const state = consolidating()
+
+      apply(state, command)
+
+      expect(state).toEqual(consolidating())
+    })
+  })
+
+  describe('merge', () => {
+    it("appends the source's questions to the target, deletes the source and bumps the target's version", () => {
+      const result = apply(consolidating(), merge)
+
+      expect(result.state.groups).toEqual({ g1: { ...whyGroup, version: 2, questionIds: ['q1', 'q2', 'q3'] } })
+    })
+
+    it.each([
+      { type: 'merge', sourceGroupId: 'missing', targetGroupId: 'g1' },
+      { type: 'merge', sourceGroupId: 'g2', targetGroupId: 'missing' },
+    ] as const)('rejects a missing group in %j', (command) => {
+      expect(() => apply(consolidating(), command)).toThrow(new CommandRejected('Group not found'))
+    })
+
+    it('rejects merging a group into itself', () => {
+      const command = { type: 'merge', sourceGroupId: 'g1', targetGroupId: 'g1' } as const
+
+      expect(() => apply(consolidating(), command)).toThrow(new CommandRejected("Can't merge a group into itself"))
+    })
+  })
+
+  describe('split', () => {
+    it("moves the question into a new version 0 group labeled with its text and bumps the old group's version", () => {
+      const result = apply(consolidating(), split)
+
+      expect(result.state.groups).toEqual({
+        g1: { ...whyGroup, version: 2, questionIds: ['q1'] },
+        g2: whoGroup,
+        'g-new': { id: 'g-new', label: 'Why today?', version: 0, questionIds: ['q2'] },
+      })
+    })
+
+    it('rejects a missing group', () => {
+      expect(() => apply(consolidating(), { ...split, groupId: 'missing' })).toThrow(new CommandRejected('Group not found'))
+    })
+
+    it('rejects a question that is not in the group', () => {
+      expect(() => apply(consolidating(), { ...split, questionId: 'q3' })).toThrow(
+        new CommandRejected('Question not in group'),
+      )
+    })
+
+    it('rejects splitting the only question out of a group', () => {
+      const command = { type: 'split', groupId: 'g2', questionId: 'q3' } as const
+
+      expect(() => apply(consolidating(), command)).toThrow(new CommandRejected('Group has only one question'))
+    })
+  })
+
+  describe('reword', () => {
+    it('sets the trimmed label and bumps the version', () => {
+      const result = apply(consolidating(), { ...reword, label: '  When?  ' })
+
+      expect(result.state.groups.g1).toEqual({ ...whyGroup, label: 'When?', version: 2 })
+    })
+
+    it('accepts a 280 character label', () => {
+      const label = 'x'.repeat(280)
+
+      expect(apply(consolidating(), { ...reword, label }).state.groups.g1.label).toBe(label)
+    })
+
+    it.each(['   ', 'x'.repeat(281)])('rejects the label %j', (label) => {
+      expect(() => apply(consolidating(), { ...reword, label })).toThrow(new CommandRejected('Label must be 1–280 characters'))
+    })
+
+    it('rejects a missing group', () => {
+      expect(() => apply(consolidating(), { ...reword, groupId: 'missing' })).toThrow(new CommandRejected('Group not found'))
+    })
+
+    it('rejects a stale baseVersion', () => {
+      expect(() => apply(consolidating(), { ...reword, baseVersion: 0 })).toThrow(
+        new CommandRejected('Group changed, refresh'),
+      )
+    })
+  })
+})
+
+describe('singletonGroups', () => {
+  it('makes one group per question, labeled with its text, in question order', () => {
+    const questions = {
+      q1: { id: 'q1', authorId: 'p1', text: 'Why now?' },
+      q2: { id: 'q2', authorId: 'p2', text: 'Who pays?' },
+    }
+
+    expect(singletonGroups(Object.values(questions))).toEqual([
+      { label: 'Why now?', questionIds: ['q1'] },
+      { label: 'Who pays?', questionIds: ['q2'] },
+    ])
   })
 })

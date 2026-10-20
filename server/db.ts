@@ -1,4 +1,3 @@
-/** Persists session state as JSON in SQLite, one row per session, behind SessionRepository. */
 import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'

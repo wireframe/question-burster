@@ -8,8 +8,10 @@ This is a personal prototype that runs locally. Planning artifacts live in `docs
 
 ```sh
 npm install
-cp .env.example .env   # optional; defaults work for local dev
+cp .env.example .env   # required; then fill in ANTHROPIC_API_KEY
 ```
+
+The server will not start without `ANTHROPIC_API_KEY` in `.env`.
 
 ## Scripts
 
@@ -25,6 +27,9 @@ cp .env.example .env   # optional; defaults work for local dev
 |---|---|---|
 | `PORT` | `3001` | Server port (Vite proxies `/api` and `/ws` to it) |
 | `DATABASE_PATH` | `data/question-burst.db` | SQLite file holding sessions; `data/` is gitignored |
+| `ANTHROPIC_API_KEY` | none (required) | Anthropic API key used to group similar questions |
+
+`ANTHROPIC_API_KEY` must be an Anthropic API key from your organization's account. Keep it in `.env`, which is gitignored, and never commit it. Question text is sent only to Anthropic, and only to group similar questions.
 
 ## Demo locally
 

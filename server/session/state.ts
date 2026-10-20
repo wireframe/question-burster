@@ -1,9 +1,7 @@
-/** The authoritative session state held by the server. It is never sent to clients as is. */
-import type { Phase } from '../../shared/protocol'
+import type { GroupingStatus, Phase } from '../../shared/protocol'
 
 export interface Participant {
   id: string
-  /** Secret proof of identity for rejoining; only ever sent to the participant's own socket. */
   resumeToken: string
   name: string
   done: boolean
@@ -15,6 +13,18 @@ export interface Question {
   text: string
 }
 
+export interface GroupDraft {
+  label: string
+  questionIds: string[]
+}
+
+export interface Group extends GroupDraft {
+  id: string
+  version: number
+}
+
+export type SystemCommand = { type: 'groupingCompleted'; groups: GroupDraft[] }
+
 export interface SessionState {
   id: string
   challenge: string
@@ -23,6 +33,8 @@ export interface SessionState {
   endsAt: number | null
   participants: Record<string, Participant>
   questions: Record<string, Question>
+  groupingStatus: GroupingStatus
+  groups: Record<string, Group>
 }
 
 export interface CommandContext {

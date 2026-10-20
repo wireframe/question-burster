@@ -9,6 +9,9 @@ describe('parseCommand', () => {
     { type: 'advance', fromPhase: 'lobby' },
     { type: 'submitQuestion', text: 'Why?' },
     { type: 'markDone' },
+    { type: 'merge', sourceGroupId: 'g1', targetGroupId: 'g2' },
+    { type: 'split', groupId: 'g1', questionId: 'q1' },
+    { type: 'reword', groupId: 'g1', label: 'Why?', baseVersion: 0 },
   ])('accepts %j', (message) => {
     expect(parseCommand(message)).toEqual(message)
   })
@@ -25,12 +28,23 @@ describe('parseCommand', () => {
     { type: 'advance', fromPhase: 'intermission' },
     { type: 'submitQuestion' },
     { type: 'submitQuestion', text: 42 },
+    { type: 'merge', sourceGroupId: 'g1' },
+    { type: 'merge', sourceGroupId: 1, targetGroupId: 'g2' },
+    { type: 'split', groupId: 'g1' },
+    { type: 'split', groupId: 'g1', questionId: 2 },
+    { type: 'reword', groupId: 'g1', label: 'Why?' },
+    { type: 'reword', groupId: 'g1', label: 3, baseVersion: 0 },
+    { type: 'reword', groupId: 'g1', label: 'Why?', baseVersion: '0' },
   ])('rejects the malformed message %j', (message) => {
     expect(() => parseCommand(message)).toThrow(new CommandRejected('Invalid message'))
   })
 
   it('rejects an unrecognized type as an unknown command', () => {
     expect(() => parseCommand({ type: 'dance' })).toThrow(new CommandRejected('Unknown command'))
+  })
+
+  it('rejects the server-only groupingCompleted command from a client', () => {
+    expect(() => parseCommand({ type: 'groupingCompleted', groups: [] })).toThrow(new CommandRejected('Unknown command'))
   })
 
   it('rejects a type inherited from Object.prototype as an unknown command', () => {

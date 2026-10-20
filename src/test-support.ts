@@ -1,4 +1,3 @@
-/** Shared test fixtures for client code. */
 import type { SessionView } from '../shared/protocol'
 
 export function buildView(overrides: Partial<SessionView> = {}): SessionView {
@@ -10,6 +9,8 @@ export function buildView(overrides: Partial<SessionView> = {}): SessionView {
     endsAt: null,
     participants: [],
     myQuestions: [],
+    groupingStatus: 'idle',
+    groups: [],
     ...overrides,
   }
 }

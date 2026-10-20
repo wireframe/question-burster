@@ -1,4 +1,3 @@
-/** Turns untrusted client input (WebSocket messages, HTTP bodies) into typed requests, or rejects it. */
 import { PHASE_ORDER, type ClientCommand, type CreateSessionRequest } from '../../shared/protocol'
 import { burstLengthRejected, challengeRequired, CommandRejected } from './errors'
 
@@ -10,6 +9,9 @@ const IS_VALID: Record<CommandType, (message: Message) => boolean> = {
   advance: (message) => PHASE_ORDER.some((phase) => phase === message.fromPhase),
   submitQuestion: (message) => typeof message.text === 'string',
   markDone: () => true,
+  merge: (message) => areStrings(message.sourceGroupId, message.targetGroupId),
+  split: (message) => areStrings(message.groupId, message.questionId),
+  reword: (message) => areStrings(message.groupId, message.label) && typeof message.baseVersion === 'number',
 }
 
 export function parseCommand(message: unknown): ClientCommand {
@@ -32,6 +34,10 @@ function commandType(type: string): CommandType {
 
 function isTypedMessage(value: unknown): value is Message & { type: string } {
   return typeof value === 'object' && value !== null && typeof (value as Message).type === 'string'
+}
+
+function areStrings(...values: unknown[]): boolean {
+  return values.every((value) => typeof value === 'string')
 }
 
 function isOptionalString(value: unknown): boolean {

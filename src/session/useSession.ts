@@ -5,6 +5,7 @@ import { createSessionClient, type SessionClient, type SessionSnapshot, type Web
 export interface Session extends SessionSnapshot {
   send: (command: ClientCommand) => void
   join: (name: string) => void
+  dismissRejection: () => void
 }
 
 function openBrowserSocket(path: string): WebSocketLike {
@@ -23,9 +24,8 @@ function useConnectedClient(sessionId: string): SessionClient {
   return client
 }
 
-/** Live state of one session, re-rendering whenever the server sends an update. */
 export function useSession(sessionId: string): Session {
   const client = useConnectedClient(sessionId)
   const snapshot = useSyncExternalStore(client.subscribe, client.getSnapshot)
-  return { ...snapshot, send: client.send, join: client.join }
+  return { ...snapshot, send: client.send, join: client.join, dismissRejection: client.dismissRejection }
 }

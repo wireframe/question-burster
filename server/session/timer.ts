@@ -1,7 +1,5 @@
-/** When the running burst closes to new questions, and when the server should auto-advance it. */
 import type { SessionState } from './state'
 
-/** How long after endsAt a submitted question is still accepted, to absorb network latency. */
 export const BURST_GRACE_MS = 2000
 
 export function burstClosesAt(state: SessionState): number {
