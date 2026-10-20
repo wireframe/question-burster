@@ -1,11 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { MAX_QUESTION_LENGTH, type ParticipantView } from '../../shared/protocol'
-import { ChallengeBanner } from '../components/ChallengeBanner'
 import { ParticipantChip } from '../components/ParticipantChip'
 import { QuestionList } from '../components/QuestionList'
 import { actionBar, card, fieldLabel, secondaryButton, sectionTitle, textField } from '../components/ui'
-import { countdownUrgency, formatClock, type CountdownUrgency } from '../session/countdown'
-import { AdvanceButton } from './AdvanceButton'
 import type { PhaseScreenProps } from './types'
 
 interface BurstProps extends PhaseScreenProps {
@@ -16,18 +13,13 @@ interface BurstProps extends PhaseScreenProps {
 export function Burst({ view, send, secondsRemaining, participantId }: BurstProps) {
   return (
     <div className="space-y-6">
-      <ChallengeBanner challenge={view.challenge} />
-      <Countdown secondsRemaining={secondsRemaining} />
       <QuestionForm send={send} timeIsUp={secondsRemaining === 0} />
       <section className="space-y-3">
         <h2 className={sectionTitle}>Your questions</h2>
         <QuestionList questions={view.myQuestions} label="Your questions" />
       </section>
       <ParticipantProgress participants={view.participants} />
-      <div className={actionBar}>
-        {!isDone(view.participants, participantId) && <DoneButton send={send} />}
-        <AdvanceButton phase="burst" send={send}>End burst</AdvanceButton>
-      </div>
+      {!isDone(view.participants, participantId) && <DoneButton send={send} />}
     </div>
   )
 }
@@ -37,21 +29,9 @@ function isDone(participants: ParticipantView[], participantId: string | null): 
 }
 
 function DoneButton({ send }: Pick<PhaseScreenProps, 'send'>) {
-  return <button type="button" className={secondaryButton} onClick={() => send({ type: 'markDone' })}>I'm done</button>
-}
-
-const URGENCY_STYLES: Record<CountdownUrgency, string> = {
-  calm: 'bg-surface text-ink border-line',
-  warning: 'bg-warning-soft text-warning border-warning/40',
-  critical: 'bg-danger-soft text-danger border-danger/40',
-}
-
-function Countdown({ secondsRemaining }: { secondsRemaining: number }) {
   return (
-    <div className="flex justify-center">
-      <p role="timer" className={`rounded-full border-2 px-8 py-2 text-4xl font-bold tabular-nums shadow-card transition-colors sm:text-5xl ${URGENCY_STYLES[countdownUrgency(secondsRemaining)]}`}>
-        {secondsRemaining === 0 ? "Time's up" : formatClock(secondsRemaining)}
-      </p>
+    <div className={actionBar}>
+      <button type="button" className={secondaryButton} onClick={() => send({ type: 'markDone' })}>I'm done</button>
     </div>
   )
 }

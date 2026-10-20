@@ -40,14 +40,20 @@ function groupCard(label: string) {
 }
 
 describe('Vote', () => {
-  it('shows each group with its questions and the viewer\'s own dot count', () => {
+  it('shows each group\'s label with the viewer\'s own dot count', () => {
     renderVote()
 
-    expect(within(groupCard('Review speed')).getByText('Why do reviews take days?')).toBeInTheDocument()
-    expect(within(groupCard('Review speed')).getByText('Who reviews what?')).toBeInTheDocument()
+    expect(within(groupCard('Review speed')).getByRole('heading', { name: 'Review speed' })).toBeInTheDocument()
     expect(within(groupCard('Review speed')).getByText('2 votes')).toBeInTheDocument()
-    expect(within(groupCard('Deploys')).getByText('Why are deploys scary?')).toBeInTheDocument()
     expect(within(groupCard('Deploys')).getByText('0 votes')).toBeInTheDocument()
+  })
+
+  it('shows only the consolidated label, not the constituent questions', () => {
+    renderVote()
+
+    expect(screen.queryByText('Why do reviews take days?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Who reviews what?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Why are deploys scary?')).not.toBeInTheDocument()
   })
 
   it('casts a vote for a group', async () => {
@@ -78,20 +84,5 @@ describe('Vote', () => {
 
     expect(screen.getByRole('button', { name: 'Remove vote from Deploys' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Remove vote from Review speed' })).toBeEnabled()
-  })
-
-  it('shows votes left and how many people are done', () => {
-    renderVote()
-
-    expect(screen.getByText('1 vote left')).toBeInTheDocument()
-    expect(screen.getByText('1 of 3 people done')).toBeInTheDocument()
-  })
-
-  it('advances to results when Show results is clicked', async () => {
-    const { send, user } = renderVote()
-
-    await user.click(screen.getByRole('button', { name: 'Show results' }))
-
-    expect(send).toHaveBeenCalledWith({ type: 'advance', fromPhase: 'vote' })
   })
 })

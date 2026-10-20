@@ -1,7 +1,7 @@
 import { createSessionRequest } from './api'
 import { AppShell } from './components/AppShell'
-import { primaryButton } from './components/ui'
-import { parseRoute } from './route'
+import { pageColumn, primaryButton } from './components/ui'
+import { parseRoute, type Route } from './route'
 import { CreateSession } from './screens/CreateSession'
 import { SessionScreen } from './screens/SessionScreen'
 
@@ -10,18 +10,18 @@ function goToSession(id: string) {
 }
 
 export function App() {
+  const route = parseRoute(location.pathname)
   return (
-    <AppShell>
-      <RoutedScreen />
+    <AppShell showBrand={route.name !== 'session'}>
+      <RoutedScreen route={route} />
     </AppShell>
   )
 }
 
-function RoutedScreen() {
-  const route = parseRoute(location.pathname)
+function RoutedScreen({ route }: { route: Route }) {
   switch (route.name) {
     case 'create':
-      return <CreateSession createSession={createSessionRequest} onCreated={goToSession} />
+      return <div className={pageColumn}><CreateSession createSession={createSessionRequest} onCreated={goToSession} /></div>
     case 'session':
       return <SessionScreen sessionId={route.id} />
     case 'notFound':
@@ -31,7 +31,7 @@ function RoutedScreen() {
 
 function NotFound() {
   return (
-    <div className="space-y-6 py-12 text-center">
+    <div className={`${pageColumn} space-y-6 py-12 text-center`}>
       <h1 className="text-3xl font-bold">Not found</h1>
       <a href="/" className={primaryButton}>Start a new session</a>
     </div>

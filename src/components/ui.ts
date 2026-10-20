@@ -3,13 +3,19 @@ const focusRing =
 
 const buttonBase = `inline-flex items-center justify-center gap-2 font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed ${focusRing}`
 
-export const primaryButton = `${buttonBase} rounded-full bg-accent px-6 py-3 text-white shadow-card hover:bg-accent-strong disabled:bg-accent/40 disabled:shadow-none`
+const primaryFill = `${buttonBase} rounded-full bg-accent text-white shadow-card hover:bg-accent-strong disabled:bg-accent/40 disabled:shadow-none`
+
+export const primaryButton = `${primaryFill} px-6 py-3`
+
+export const compactPrimaryButton = `${primaryFill} px-5 py-2 text-sm`
 
 export const secondaryButton = `${buttonBase} rounded-full border border-line bg-surface px-4 py-2 text-sm text-ink hover:border-accent hover:text-accent disabled:text-ink-muted/60 disabled:hover:border-line`
 
 export const ghostButton = `${buttonBase} rounded-full px-3 py-1 text-sm text-ink-muted hover:bg-accent-soft hover:text-accent`
 
 export const roundButton = `${buttonBase} size-9 rounded-full border border-line bg-surface text-lg text-ink hover:border-accent hover:text-accent disabled:text-ink-muted/40 disabled:hover:border-line disabled:hover:text-ink-muted/40`
+
+export const pageColumn = 'mx-auto w-full max-w-3xl px-4 sm:px-6'
 
 export const card = 'rounded-card border border-line bg-surface p-5 shadow-card sm:p-6'
 

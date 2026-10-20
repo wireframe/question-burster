@@ -33,11 +33,10 @@ function groupCard(label: string) {
 }
 
 describe('Consolidate', () => {
-  it('shows a grouping message and disables advancing while grouping is pending', () => {
+  it('shows a grouping message while grouping is pending', () => {
     renderConsolidate(buildView({ phase: 'consolidate', groupingStatus: 'pending' }))
 
     expect(screen.getByText('Grouping similar questions…')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Start voting' })).toBeDisabled()
   })
 
   it('lists the groups with their questions when ready', () => {
@@ -46,14 +45,6 @@ describe('Consolidate', () => {
     expect(within(groupCard('Review speed')).getByText('Why do reviews take days?')).toBeInTheDocument()
     expect(within(groupCard('Review speed')).getByText('Who reviews what?')).toBeInTheDocument()
     expect(within(groupCard('Deploys')).getByText('Why are deploys scary?')).toBeInTheDocument()
-  })
-
-  it('advances from consolidate when Start voting is clicked', async () => {
-    const { send, user } = renderConsolidate()
-
-    await user.click(screen.getByRole('button', { name: 'Start voting' }))
-
-    expect(send).toHaveBeenCalledWith({ type: 'advance', fromPhase: 'consolidate' })
   })
 
   it('merges a group into the target chosen in its select', async () => {

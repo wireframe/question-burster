@@ -7,7 +7,6 @@ import { Burst } from './Burst'
 
 const burstView = buildView({
   phase: 'burst',
-  challenge: 'How might we ship faster?',
   participants: [
     { id: 'p1', name: 'Ada', questionCount: 2, done: false },
     { id: 'p2', name: 'Grace', questionCount: 3, done: true },
@@ -31,20 +30,12 @@ function renderBurst({ view = burstView, secondsRemaining = 125, participantId =
 }
 
 describe('Burst', () => {
-  it('shows the challenge, the countdown and the viewer\'s own questions', () => {
+  it('shows the viewer\'s own questions', () => {
     renderBurst()
 
-    expect(screen.getByRole('heading', { name: 'How might we ship faster?' })).toBeInTheDocument()
-    expect(screen.getByText('2:05')).toBeInTheDocument()
     const myQuestions = screen.getByRole('list', { name: 'Your questions' })
     expect(within(myQuestions).getByText('What slows us down?')).toBeInTheDocument()
     expect(within(myQuestions).getByText('Who waits on whom?')).toBeInTheDocument()
-  })
-
-  it('shows time\'s up when the countdown reaches zero', () => {
-    renderBurst({ secondsRemaining: 0 })
-
-    expect(screen.getByText('Time\'s up')).toBeInTheDocument()
   })
 
   it('submits a question on Enter and clears the input', async () => {
@@ -92,13 +83,5 @@ describe('Burst', () => {
     expect(within(participants).getByText('Ada · 2')).toBeInTheDocument()
     expect(within(participants).getByText('Grace · 3 ✓')).toBeInTheDocument()
     expect(within(participants).queryByText('What slows us down?')).not.toBeInTheDocument()
-  })
-
-  it('lets anyone end the burst early', async () => {
-    const { send, user } = renderBurst()
-
-    await user.click(screen.getByRole('button', { name: 'End burst' }))
-
-    expect(send).toHaveBeenCalledWith({ type: 'advance', fromPhase: 'burst' })
   })
 })

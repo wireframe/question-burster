@@ -5,25 +5,29 @@ export interface Step {
   number: number
   label: string
   hint: string
+  advanceLabel: string | null
 }
 
 export type StepStatus = 'done' | 'current' | 'upcoming'
 
-const STEP_COPY: Record<Phase, Pick<Step, 'label' | 'hint'>> = {
-  lobby: { label: 'Join', hint: 'Wait for everyone to join, then start the burst.' },
+const STEP_COPY: Record<Phase, Omit<Step, 'phase' | 'number'>> = {
+  lobby: { label: 'Join', hint: 'Wait for everyone to join, then start the burst.', advanceLabel: 'Start burst' },
   burst: {
     label: 'Burst',
     hint: 'Write as many questions as you can. No answers, no explanations — just questions.',
+    advanceLabel: 'End burst',
   },
   consolidate: {
     label: 'Consolidate',
     hint: "Merge questions that ask the same thing, split ones that don't, and sharpen the wording.",
+    advanceLabel: 'Start voting',
   },
   vote: {
     label: 'Vote',
     hint: `You have ${VOTES_PER_PERSON} votes. Put them on the questions that matter most — stack them if you feel strongly.`,
+    advanceLabel: 'Show results',
   },
-  results: { label: 'Results', hint: 'These are the questions the group thinks matter most.' },
+  results: { label: 'Results', hint: 'These are the questions the group thinks matter most.', advanceLabel: null },
 }
 
 export const STEPS: Step[] = PHASE_ORDER.map((phase, index) => ({ phase, number: index + 1, ...STEP_COPY[phase] }))

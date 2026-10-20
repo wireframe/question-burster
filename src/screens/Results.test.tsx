@@ -5,7 +5,6 @@ import { Results } from './Results'
 
 const resultsView = buildView({
   phase: 'results',
-  challenge: 'How might we ship faster?',
   results: [
     {
       groupId: 'g1',
@@ -27,12 +26,6 @@ function rankedItems() {
 }
 
 describe('Results', () => {
-  it('shows the challenge', () => {
-    render(<Results view={resultsView} />)
-
-    expect(screen.getByRole('heading', { name: 'How might we ship faster?' })).toBeInTheDocument()
-  })
-
   it('lists the ranked groups in order with rank, label and vote count', () => {
     render(<Results view={resultsView} />)
 
@@ -45,13 +38,13 @@ describe('Results', () => {
     expect(within(items[2]).getByRole('heading', { name: '#2 Testing' })).toBeInTheDocument()
   })
 
-  it('shows each group\'s constituent questions', () => {
+  it('shows one entry per group without its constituent questions', () => {
     render(<Results view={resultsView} />)
 
-    const [first, second] = rankedItems()
-    expect(within(first).getByText('Why do reviews take days?')).toBeInTheDocument()
-    expect(within(first).getByText('Who reviews what?')).toBeInTheDocument()
-    expect(within(second).getByText('Why are deploys scary?')).toBeInTheDocument()
+    for (const text of ['Why do reviews take days?', 'Who reviews what?', 'Why are deploys scary?', 'Why is CI slow?']) {
+      expect(screen.queryByText(text)).not.toBeInTheDocument()
+    }
+    expect(screen.queryAllByRole('list')).toHaveLength(1)
   })
 
   it('has no advance or editing controls', () => {

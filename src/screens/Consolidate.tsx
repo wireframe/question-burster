@@ -1,21 +1,9 @@
 import type { GroupView } from '../../shared/protocol'
-import { ChallengeBanner } from '../components/ChallengeBanner'
 import { QuestionGroup } from '../components/QuestionGroup'
-import { actionBar } from '../components/ui'
-import { AdvanceButton } from './AdvanceButton'
 import type { PhaseScreenProps } from './types'
 
 export function Consolidate({ view, send }: PhaseScreenProps) {
-  const pending = view.groupingStatus === 'pending'
-  return (
-    <div className="space-y-6">
-      <ChallengeBanner challenge={view.challenge} />
-      {pending ? <GroupingIndicator /> : <GroupList groups={view.groups} send={send} />}
-      <div className={actionBar}>
-        <AdvanceButton phase="consolidate" send={send} disabled={pending}>Start voting</AdvanceButton>
-      </div>
-    </div>
-  )
+  return view.groupingStatus === 'pending' ? <GroupingIndicator /> : <GroupList groups={view.groups} send={send} />
 }
 
 function GroupingIndicator() {

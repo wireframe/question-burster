@@ -1,4 +1,4 @@
-type Route = { name: 'create' } | { name: 'session'; id: string } | { name: 'notFound' }
+export type Route = { name: 'create' } | { name: 'session'; id: string } | { name: 'notFound' }
 
 const SESSION_PATH = /^\/s\/([^/]+)$/
 

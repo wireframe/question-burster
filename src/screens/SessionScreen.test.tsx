@@ -47,6 +47,31 @@ describe('SessionScreen', () => {
     expect(screen.queryByRole('button', { name: 'Join' })).not.toBeInTheDocument()
   })
 
+  it('offers no next step before joining', () => {
+    renderWithSession({})
+
+    expect(screen.queryByRole('button', { name: 'Start burst' })).not.toBeInTheDocument()
+  })
+
+  it('offers no next step while rejoining', () => {
+    renderWithSession({ rejoining: true })
+
+    expect(screen.queryByRole('button', { name: 'Start burst' })).not.toBeInTheDocument()
+  })
+
+  it('shows the challenge as the page heading on the join screen', () => {
+    renderWithSession({ view: buildView({ challenge: 'How might we ship faster?' }) })
+
+    expect(screen.getByRole('heading', { level: 1, name: 'How might we ship faster?' })).toBeInTheDocument()
+  })
+
+  it('shows the countdown to someone joining during the burst', () => {
+    vi.useFakeTimers({ now: 100_000, toFake: ['Date'] })
+    renderWithSession({ view: buildView({ phase: 'burst', endsAt: 160_000 }) })
+
+    expect(screen.getByRole('timer')).toHaveTextContent('1:00')
+  })
+
   it('shows connecting until the first state arrives', () => {
     renderWithSession({ view: null })
 

@@ -18,6 +18,10 @@ describe('STEPS', () => {
     )
   })
 
+  it('names the action that moves each step on, with none after results', () => {
+    expect(STEPS.map((step) => step.advanceLabel)).toEqual(['Start burst', 'End burst', 'Start voting', 'Show results', null])
+  })
+
   it('tells bursters to write only questions', () => {
     expect(stepFor('burst').hint).toBe(
       'Write as many questions as you can. No answers, no explanations — just questions.',

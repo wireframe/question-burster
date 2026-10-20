@@ -1,6 +1,4 @@
 import type { ResultView, SessionView } from '../../shared/protocol'
-import { ChallengeBanner } from '../components/ChallengeBanner'
-import { QuestionList } from '../components/QuestionList'
 import { card } from '../components/ui'
 import { pluralize } from './pluralize'
 
@@ -8,12 +6,9 @@ export function Results({ view }: { view: SessionView }) {
   const results = requireResults(view)
   const mostVotes = Math.max(1, ...results.map((result) => result.votes))
   return (
-    <div className="space-y-6">
-      <ChallengeBanner challenge={view.challenge} />
-      <ol aria-label="Ranked groups" className="space-y-4">
-        {results.map((result) => <RankedGroup key={result.groupId} result={result} mostVotes={mostVotes} />)}
-      </ol>
-    </div>
+    <ol aria-label="Ranked groups" className="space-y-4">
+      {results.map((result) => <RankedGroup key={result.groupId} result={result} mostVotes={mostVotes} />)}
+    </ol>
   )
 }
 
@@ -25,13 +20,12 @@ function requireResults(view: SessionView): ResultView[] {
 function RankedGroup({ result, mostVotes }: { result: ResultView; mostVotes: number }) {
   const top = result.rank === 1
   return (
-    <li className={`${card} space-y-4 ${top ? 'border-2 border-accent ring-4 ring-accent-soft' : ''}`}>
+    <li className={`${card} space-y-3 ${top ? 'border-2 border-accent ring-4 ring-accent-soft' : ''}`}>
       <h2 className={`flex items-center gap-3 font-semibold ${top ? 'text-xl sm:text-2xl' : 'text-lg'}`}>
         <RankBadge rank={result.rank} />{' '}
         <span className="min-w-0 break-words">{result.label}</span>
       </h2>
       <VoteBar votes={result.votes} mostVotes={mostVotes} />
-      <QuestionList questions={result.questions} />
     </li>
   )
 }

@@ -5,17 +5,11 @@ import { JoinSession } from './JoinSession'
 
 function renderScreen() {
   const onJoin = vi.fn()
-  render(<JoinSession challenge="How might we ship faster?" onJoin={onJoin} />)
+  render(<JoinSession onJoin={onJoin} />)
   return { onJoin, user: userEvent.setup() }
 }
 
 describe('JoinSession', () => {
-  it('shows the challenge being joined', () => {
-    renderScreen()
-
-    expect(screen.getByRole('heading', { name: 'How might we ship faster?' })).toBeInTheDocument()
-  })
-
   it('joins with the trimmed name', async () => {
     const { onJoin, user } = renderScreen()
 

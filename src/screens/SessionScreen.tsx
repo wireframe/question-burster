@@ -1,6 +1,7 @@
 import { isFinalPhase, type SessionView } from '../../shared/protocol'
 import { RejectionNotice } from '../components/RejectionNotice'
-import { WorkflowStepper } from '../components/WorkflowStepper'
+import { SessionHeader } from '../components/SessionHeader'
+import { pageColumn } from '../components/ui'
 import { useCountdown } from '../session/useCountdown'
 import { useSession, type Session } from '../session/useSession'
 import { Burst } from './Burst'
@@ -24,39 +25,60 @@ function needsToJoin(participantId: string | null, view: SessionView): boolean {
   return participantId == null && !isFinalPhase(view.phase)
 }
 
+function canAct({ participantId, rejoining }: Session, view: SessionView): boolean {
+  return !rejoining && !needsToJoin(participantId, view)
+}
+
 function SessionBody({ session }: { session: Session }) {
   const { view } = session
-  if (!view) return <StatusMessage>Connecting…</StatusMessage>
+  if (!view) return <div className={pageColumn}><StatusMessage>Connecting…</StatusMessage></div>
+  if (view.phase === 'burst') return <TimedSession session={session} view={view} />
+  return <SessionLayout session={session} view={view} secondsRemaining={0} />
+}
+
+interface SessionViewProps {
+  session: Session
+  view: SessionView
+}
+
+interface LiveSessionProps extends SessionViewProps {
+  secondsRemaining: number
+}
+
+function TimedSession({ session, view }: SessionViewProps) {
+  const secondsRemaining = useCountdown(view.endsAt, session.clockOffset)
+  return <SessionLayout session={session} view={view} secondsRemaining={secondsRemaining} />
+}
+
+function SessionLayout(props: LiveSessionProps) {
+  const { session, view, secondsRemaining } = props
   return (
     <div className="space-y-6">
-      <WorkflowStepper phase={view.phase} />
-      <SessionContent session={session} view={view} />
+      <SessionHeader view={view} secondsRemaining={secondsRemaining} send={canAct(session, view) ? session.send : null} />
+      <div className={pageColumn}>
+        <SessionContent {...props} />
+      </div>
     </div>
   )
 }
 
-function SessionContent({ session, view }: LiveSessionProps) {
-  const { participantId, rejoining, join } = session
-  if (rejoining) return <StatusMessage>Rejoining…</StatusMessage>
-  if (needsToJoin(participantId, view)) return <JoinSession challenge={view.challenge} onJoin={join} />
-  return <PhaseScreen session={session} view={view} />
+function SessionContent(props: LiveSessionProps) {
+  const { session, view } = props
+  if (session.rejoining) return <StatusMessage>Rejoining…</StatusMessage>
+  if (needsToJoin(session.participantId, view)) return <JoinSession onJoin={session.join} />
+  return <PhaseScreen {...props} />
 }
 
 function StatusMessage({ children }: { children: string }) {
   return <p className="py-12 text-center text-ink-muted">{children}</p>
 }
 
-interface LiveSessionProps {
-  session: Session
-  view: SessionView
-}
-
-function PhaseScreen({ session, view }: LiveSessionProps) {
+function PhaseScreen({ session, view, secondsRemaining }: LiveSessionProps) {
   switch (view.phase) {
     case 'lobby':
-      return <Lobby view={view} send={session.send} />
+      return <Lobby view={view} />
     case 'burst':
-      return <BurstPhase session={session} view={view} />
+      return <Burst view={view} send={session.send} secondsRemaining={secondsRemaining} participantId={session.participantId} />
     case 'consolidate':
       return <Consolidate view={view} send={session.send} />
     case 'vote':
@@ -64,9 +86,4 @@ function PhaseScreen({ session, view }: LiveSessionProps) {
     case 'results':
       return <Results view={view} />
   }
-}
-
-function BurstPhase({ session: { send, clockOffset, participantId }, view }: LiveSessionProps) {
-  const secondsRemaining = useCountdown(view.endsAt, clockOffset)
-  return <Burst view={view} send={send} secondsRemaining={secondsRemaining} participantId={participantId} />
 }

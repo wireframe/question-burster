@@ -2,6 +2,8 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { WorkflowStepper } from './WorkflowStepper'
 
+const BURST_HINT = 'Write as many questions as you can. No answers, no explanations — just questions.'
+
 function progressSteps() {
   return within(screen.getByRole('list', { name: 'Session progress' })).getAllByRole('listitem')
 }
@@ -37,12 +39,19 @@ describe('WorkflowStepper', () => {
     expect(within(vote).queryByLabelText('done')).not.toBeInTheDocument()
   })
 
-  it('shows the hint for the current step', () => {
+  it('describes the current step with its hint', () => {
     render(<WorkflowStepper phase="burst" />)
 
-    expect(
-      screen.getByText('Write as many questions as you can. No answers, no explanations — just questions.'),
-    ).toBeInTheDocument()
+    const [, burst] = progressSteps()
+    expect(burst).toHaveAccessibleDescription(BURST_HINT)
+  })
+
+  it('shows the hint and extra content in the current step callout', () => {
+    render(<WorkflowStepper phase="burst"><button type="button">End burst</button></WorkflowStepper>)
+
+    const callout = screen.getByRole('group', { name: 'Current step' })
+    expect(within(callout).getByText(BURST_HINT)).toBeInTheDocument()
+    expect(within(callout).getByRole('button', { name: 'End burst' })).toBeInTheDocument()
   })
 
   it('summarises progress for narrow screens', () => {
