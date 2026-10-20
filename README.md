@@ -1,6 +1,6 @@
 # Question Burst
 
-A small collaborative web app inspired by Hal Gregersen's Question Burst practice. Each participant writes questions privately against a shared timer. The group then consolidates similar questions and dot-votes on the ones that matter most.
+A small collaborative web app inspired by the Question Burst practice from Hal Gregersen's ["Better Brainstorming"](https://hbr.org/2018/03/better-brainstorming) (Harvard Business Review, March–April 2018). Each participant writes questions privately against a shared timer. The group then consolidates similar questions and dot-votes on the ones that matter most.
 
 This is a personal prototype that runs locally. Planning artifacts live in `docs/plans/2026-10-20-question-burst-app/`.
 

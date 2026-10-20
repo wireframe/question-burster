@@ -12,6 +12,7 @@ export function AppShell({ showBrand, children }: AppShellProps) {
     <div className="min-h-screen pb-16">
       {showBrand && <AppHeader />}
       <main>{children}</main>
+      <AppFooter />
     </div>
   )
 }
@@ -24,5 +25,20 @@ function AppHeader() {
         <span className="font-marker text-3xl leading-none font-bold text-ink">Question Burst</span>
       </a>
     </header>
+  )
+}
+
+function AppFooter() {
+  return (
+    <footer className={`${pageColumn} pt-12 text-center text-sm text-ink-muted`}>
+      Based on the Question Burst from Hal Gregersen's{' '}
+      <a
+        href="https://hbr.org/2018/03/better-brainstorming"
+        className="font-semibold underline underline-offset-2 hover:text-accent"
+      >
+        "Better Brainstorming"
+      </a>{' '}
+      (Harvard Business Review, 2018).
+    </footer>
   )
 }
