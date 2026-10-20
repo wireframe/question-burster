@@ -1,8 +1,9 @@
-import { useId, type ChangeEvent, type FocusEvent, type KeyboardEvent } from 'react'
-import { MAX_LABEL_LENGTH, type GroupView, type QuestionView } from '../../shared/protocol'
+import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
+import { MAX_LABEL_LENGTH, type ClientCommand, type GroupView, type QuestionView } from '../../shared/protocol'
 import type { PhaseScreenProps } from '../screens/types'
 import { stickyNoteClasses } from './stickyNote'
-import { card, ghostButton } from './ui'
+import { charactersLeftHint, isSaveable, remoteLabel, rewordCommand, saveOutcome, startDraft, type LabelDraft } from './labelDraft'
+import { card, compactPrimaryButton, ghostButton, secondaryButton } from './ui'
 
 interface QuestionGroupProps extends Pick<PhaseScreenProps, 'send'> {
   group: GroupView
@@ -12,7 +13,7 @@ interface QuestionGroupProps extends Pick<PhaseScreenProps, 'send'> {
 export function QuestionGroup({ group, otherGroups, send }: QuestionGroupProps) {
   return (
     <div role="group" className={`${card} min-w-0 space-y-4`} aria-label={group.label}>
-      <LabelEditor group={group} send={send} />
+      <GroupHeading group={group} send={send} />
       <GroupQuestions group={group} send={send} />
       <MergeSelect group={group} otherGroups={otherGroups} send={send} />
     </div>
@@ -21,36 +22,132 @@ export function QuestionGroup({ group, otherGroups, send }: QuestionGroupProps) 
 
 type GroupActionProps = Omit<QuestionGroupProps, 'otherGroups'>
 
-function LabelEditor({ group, send }: GroupActionProps) {
-  const inputId = useId()
+function GroupHeading({ group, send }: GroupActionProps) {
+  const [draft, setDraft] = useState<LabelDraft | null>(null)
+  if (draft === null) return <LabelView label={group.label} onEdit={() => setDraft(startDraft(group))} />
+  return <LabelEditor group={group} draft={draft} onDraftChange={setDraft} onClose={() => setDraft(null)} send={send} />
+}
 
-  function submitLabel(event: FocusEvent<HTMLTextAreaElement>) {
-    const label = event.target.value.trim()
-    if (label === '') event.target.value = group.label
-    else if (label !== group.label) send({ type: 'reword', groupId: group.id, label, baseVersion: group.version })
+function LabelView({ label, onEdit }: { label: string; onEdit: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <h2 className="min-w-0 text-lg leading-snug font-semibold break-words text-ink">{label}</h2>
+      <button type="button" aria-label={`Edit question: ${label}`} className={`${ghostButton} shrink-0 gap-1 text-xs`} onClick={onEdit}>
+        <PencilIcon />
+        Edit
+      </button>
+    </div>
+  )
+}
+
+function PencilIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z" />
+    </svg>
+  )
+}
+
+interface LabelEditorProps extends GroupActionProps {
+  draft: LabelDraft
+  onDraftChange: (draft: LabelDraft) => void
+  onClose: () => void
+}
+
+function LabelEditor({ group, draft, onDraftChange, onClose, send }: LabelEditorProps) {
+  const { confirmingReplace, save, replaceWithMine } = useLabelSave({ group, draft, onClose, send })
+  const theirs = remoteLabel(draft, group)
+  return (
+    <div className="space-y-2">
+      <DraftField draft={draft} onDraftChange={onDraftChange} onSave={save} onCancel={onClose} />
+      {theirs !== null && <p className="text-sm text-ink-muted">Someone else updated this question to "{theirs}".</p>}
+      {confirmingReplace
+        ? <ConflictChoices onUseTheirs={onClose} onReplaceWithMine={replaceWithMine} />
+        : <EditActions saveable={isSaveable(draft)} onSave={save} onCancel={onClose} />}
+    </div>
+  )
+}
+
+function useLabelSave({ group, draft, onClose, send }: Omit<LabelEditorProps, 'onDraftChange'>) {
+  const [confirmingReplace, setConfirmingReplace] = useState(false)
+
+  function sendAndClose(command: ClientCommand) {
+    send(command)
+    onClose()
+  }
+
+  function save() {
+    const outcome = saveOutcome(draft, group)
+    if (outcome.kind === 'conflict') setConfirmingReplace(true)
+    else sendAndClose(outcome.command)
+  }
+
+  return { confirmingReplace, save, replaceWithMine: () => sendAndClose(rewordCommand(draft, group)) }
+}
+
+interface DraftFieldProps {
+  draft: LabelDraft
+  onDraftChange: (draft: LabelDraft) => void
+  onSave: () => void
+  onCancel: () => void
+}
+
+function DraftField({ draft, onDraftChange, onSave, onCancel }: DraftFieldProps) {
+  const inputId = useId()
+  const ref = useFocusAtEnd()
+  const hint = charactersLeftHint(draft.text)
+
+  function handleKey(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Escape') onCancel()
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    if (isSaveable(draft)) onSave()
   }
 
   return (
     <>
-      <label htmlFor={inputId} className="sr-only">Label</label>
+      <label htmlFor={inputId} className="sr-only">Question wording</label>
       <textarea
-        key={`${group.id}:${group.label}`}
+        ref={ref}
         id={inputId}
         rows={1}
-        className="-mx-2 block w-[calc(100%+1rem)] resize-none field-sizing-content rounded-lg border border-transparent bg-transparent px-2 py-1 text-lg leading-snug font-semibold break-words text-ink hover:border-line focus:border-accent focus:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+        className="block w-full resize-none field-sizing-content rounded-lg border border-accent bg-surface px-2 py-1 text-lg leading-snug font-semibold break-words text-ink focus-visible:outline-2 focus-visible:outline-accent"
         maxLength={MAX_LABEL_LENGTH}
-        defaultValue={group.label}
-        onBlur={submitLabel}
-        onKeyDown={commitOnEnter}
+        value={draft.text}
+        onChange={(event) => onDraftChange({ ...draft, text: event.target.value })}
+        onKeyDown={handleKey}
       />
+      {hint && <p className="text-xs text-ink-muted">{hint}</p>}
     </>
   )
 }
 
-function commitOnEnter(event: KeyboardEvent<HTMLTextAreaElement>) {
-  if (event.key !== 'Enter') return
-  event.preventDefault()
-  event.currentTarget.blur()
+function useFocusAtEnd() {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const field = ref.current!
+    field.focus()
+    field.setSelectionRange(field.value.length, field.value.length)
+  }, [])
+  return ref
+}
+
+function EditActions({ saveable, onSave, onCancel }: { saveable: boolean; onSave: () => void; onCancel: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <button type="button" className={compactPrimaryButton} disabled={!saveable} onClick={onSave}>Save</button>
+      <button type="button" className={ghostButton} onClick={onCancel}>Cancel</button>
+    </div>
+  )
+}
+
+function ConflictChoices({ onUseTheirs, onReplaceWithMine }: { onUseTheirs: () => void; onReplaceWithMine: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className={secondaryButton} onClick={onUseTheirs}>Use theirs</button>
+      <button type="button" className={ghostButton} onClick={onReplaceWithMine}>Replace with mine</button>
+    </div>
+  )
 }
 
 function GroupQuestions({ group, send }: GroupActionProps) {
