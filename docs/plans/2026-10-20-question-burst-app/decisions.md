@@ -166,6 +166,7 @@ A collaborative web app based on Hal Gregersen's Question Burst. Each participan
 - None in app: results lose context.
 **Chosen:** Required challenge prompt
 **Rationale:** Gregersen treats framing the challenge as central to the method. It also gives the AI grouping in D5 the context it needs.
+**Format:** A short statement, not a question. In "Better Brainstorming" (HBR, 2018), Gregersen has the owner spend two minutes on the problem at a high level: how things would change if it were solved, and why it hasn't been. A pre-framed "How might we…" question would steer the burst, which is what his no-preamble rule tries to prevent. Reframing is what the burst produces. The input's hint follows that structure.
 
 ## D16: Burst timer
 **Question:** How should the burst timer work?

@@ -38,6 +38,47 @@ describe('Burst', () => {
     expect(within(myQuestions).getByText('Who waits on whom?')).toBeInTheDocument()
   })
 
+  it('shows progress toward the question goal', () => {
+    renderBurst()
+
+    expect(screen.getByText('2 of 15')).toBeInTheDocument()
+  })
+
+  it('says when the question goal is reached', () => {
+    const questions = Array.from({ length: 15 }, (_, index) => ({ id: `q${index}`, text: `Why ${index}?`, color: 0 }))
+    renderBurst({ view: { ...burstView, myQuestions: questions } })
+
+    expect(screen.getByText('15 · goal reached')).toBeInTheDocument()
+  })
+
+  it('offers tips on what makes a good question', async () => {
+    const { user } = renderBurst()
+
+    await user.click(screen.getByText('What makes a good question?'))
+
+    expect(screen.getByText('Surprising and provocative questions are welcome.')).toBeVisible()
+  })
+
+  it('nudges toward a question mark without blocking the submission', async () => {
+    const { send, user } = renderBurst()
+    const input = screen.getByLabelText('Your question')
+
+    await user.type(input, 'Reviews take days')
+
+    expect(input).toHaveAccessibleDescription('Questions end with a “?”. Press Enter to add it anyway.')
+    await user.type(input, '{Enter}')
+    expect(send).toHaveBeenCalledWith({ type: 'submitQuestion', text: 'Reviews take days' })
+  })
+
+  it('explains how to add a question once it ends with a question mark', async () => {
+    const { user } = renderBurst()
+    const input = screen.getByLabelText('Your question')
+
+    await user.type(input, 'Why do reviews take days?')
+
+    expect(input).toHaveAccessibleDescription('Press Enter to add it to the wall.')
+  })
+
   it('submits a question on Enter and clears the input', async () => {
     const { send, user } = renderBurst()
     const input = screen.getByLabelText('Your question')

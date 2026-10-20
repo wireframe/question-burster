@@ -8,7 +8,7 @@ This is a personal prototype that runs locally. Planning artifacts live in `docs
 
 A sticky header keeps the challenge, the five steps and each person's status in view. The current step's callout says what to do now and holds the button that moves everyone to the next step.
 
-**1. Create a session.** Write the challenge you want questions about and pick a burst length (4 minutes by default).
+**1. Create a session.** Describe the challenge in a few sentences: the problem, what would change if it were solved, and why you're stuck. Write it as a statement, not a question, so it doesn't steer the questions. Then pick a burst length (4 minutes by default).
 
 ![Create a session](docs/screenshots/create-session.png)
 
@@ -49,7 +49,7 @@ The server will not start without `ANTHROPIC_API_KEY` in `.env`.
 
 | Command | What it does |
 |---|---|
-| `bin/dev` | Runs the Vite client (http://localhost:5173) and the API/WebSocket server (port 3001) together |
+| `bin/dev` | Runs the Vite client (http://localhost:5280) and the API/WebSocket server (port 3280) together |
 | `bin/test` | Runs the Vitest suite; pass a path to narrow it, e.g. `bin/test server/session` |
 | `bin/typecheck` | Runs `tsc --noEmit` across `src`, `server` and `shared` |
 | `bin/screenshots` | Runs a scripted two-person session in Chrome and saves the README screenshots to `docs/screenshots/` (or a folder you pass) |
@@ -60,7 +60,7 @@ The server will not start without `ANTHROPIC_API_KEY` in `.env`.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PORT` | `3001` | Server port (Vite proxies `/api` and `/ws` to it) |
+| `PORT` | `3280` | Server port (Vite proxies `/api` and `/ws` to it) |
 | `DATABASE_PATH` | `data/question-burst.db` | SQLite file holding sessions; `data/` is gitignored |
 | `ANTHROPIC_API_KEY` | none (required) | Anthropic API key used to group similar questions |
 
@@ -68,7 +68,7 @@ The server will not start without `ANTHROPIC_API_KEY` in `.env`.
 
 ## Demo locally
 
-1. Run `bin/dev` and open http://localhost:5173.
+1. Run `bin/dev` and open http://localhost:5280.
 2. Create a session with a challenge.
 3. Open the session link in a second browser or a private window, and join under a different name.
 

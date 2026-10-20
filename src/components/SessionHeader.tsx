@@ -23,10 +23,9 @@ export function SessionHeader(props: SessionHeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-paper/85 pt-3 pb-3 shadow-[0_8px_16px_-12px_rgb(31_36_48/0.25)] backdrop-blur-md sm:pt-5 sm:pb-4">
       <div className={`${pageColumn} space-y-3`}>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <ChallengeTitle challenge={props.view.challenge} />
+        <ChallengeTitle challenge={props.view.challenge}>
           <ParticipantAvatars participants={props.view.participants} viewerId={props.participantId} />
-        </div>
+        </ChallengeTitle>
         <WorkflowStepper phase={props.view.phase}>
           {phaseStatus(props)}
           {props.send && <NextStepButton view={props.view} send={props.send} />}
@@ -36,15 +35,18 @@ export function SessionHeader(props: SessionHeaderProps) {
   )
 }
 
-function ChallengeTitle({ challenge }: { challenge: string }) {
+function ChallengeTitle({ challenge, children }: { challenge: string; children: ReactNode }) {
   return (
-    <div className="flex min-w-0 items-start gap-3">
+    <div className="flex items-start gap-3">
       <a href="/" aria-label="Question Burst home" className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
         <LogoMark />
       </a>
-      <div className="min-w-0">
-        <p className="font-marker text-lg leading-none text-accent">The challenge</p>
-        <h1 className="mt-0.5 line-clamp-2 text-lg leading-snug font-semibold text-balance break-words sm:line-clamp-none sm:text-2xl">{challenge}</h1>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-4">
+          <p className="font-marker text-lg leading-none text-accent">The challenge</p>
+          {children}
+        </div>
+        <h1 className="mt-0.5 line-clamp-2 text-lg leading-snug font-semibold text-pretty break-words sm:line-clamp-none sm:text-2xl">{challenge}</h1>
       </div>
     </div>
   )

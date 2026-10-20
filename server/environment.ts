@@ -4,7 +4,7 @@ interface Environment {
   anthropicApiKey: string
 }
 
-const DEFAULT_PORT = 3001
+const DEFAULT_PORT = 3280
 const DEFAULT_DATABASE_PATH = 'data/question-burst.db'
 
 export function loadEnvironment(env: NodeJS.ProcessEnv): Environment {

@@ -16,14 +16,31 @@ async function fillDuration(user: ReturnType<typeof userEvent.setup>, minutes: s
 }
 
 describe('CreateSession', () => {
+  it('hints at describing the challenge as a statement rather than a question', () => {
+    renderScreen()
+
+    expect(screen.getByLabelText('Challenge')).toHaveAttribute(
+      'placeholder',
+      'The problem is… If we solved it… We’re stuck because…',
+    )
+  })
+
+  it('offers tips on what makes a good challenge', async () => {
+    const { user } = renderScreen()
+
+    await user.click(screen.getByText('What makes a good challenge?'))
+
+    expect(screen.getByText('Write it as a statement, not a question. The burst does the reframing.')).toBeVisible()
+  })
+
   it('submits the challenge with the duration converted to seconds', async () => {
     const { createSession, onCreated, user } = renderScreen()
 
-    await user.type(screen.getByLabelText('Challenge'), 'How might we ship faster?')
+    await user.type(screen.getByLabelText('Challenge'), 'Releases take a month to reach customers')
     await fillDuration(user, '4')
     await user.click(screen.getByRole('button', { name: 'Create session' }))
 
-    expect(createSession).toHaveBeenCalledWith({ challenge: 'How might we ship faster?', burstSeconds: 240 })
+    expect(createSession).toHaveBeenCalledWith({ challenge: 'Releases take a month to reach customers', burstSeconds: 240 })
     expect(onCreated).toHaveBeenCalledWith('abc')
   })
 

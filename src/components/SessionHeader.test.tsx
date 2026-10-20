@@ -21,10 +21,10 @@ function currentStepCallout() {
 
 describe('SessionHeader', () => {
   it('shows the labelled challenge as the page heading', () => {
-    renderHeader({ view: buildView({ challenge: 'How might we ship faster?' }) })
+    renderHeader({ view: buildView({ challenge: 'Releases take a month to reach customers' }) })
 
     expect(screen.getByText('The challenge')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'How might we ship faster?' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Releases take a month to reach customers' })).toBeInTheDocument()
   })
 
   it('shows the hint inside the current step callout', () => {
