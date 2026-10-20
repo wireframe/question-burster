@@ -25,6 +25,13 @@ type RewordCommand = Extract<ClientCommand, { type: 'reword' }>
 type VoteCommand = Extract<ClientCommand, { type: 'castVote' | 'removeVote' }>
 type VoteInput = { actorId: string | null; command: VoteCommand }
 type GroupingCompletedCommand = Extract<SystemCommand, { type: 'groupingCompleted' }>
+type InteractivePhase = Extract<Phase, 'burst' | 'consolidate' | 'vote'>
+
+const PHASE_CLOSED_REASONS: Record<InteractivePhase, string> = {
+  burst: 'The burst is not running',
+  consolidate: 'Groups can only change during consolidate',
+  vote: 'Voting is not open',
+}
 
 export interface JoinedParticipant {
   participantId: string
@@ -117,15 +124,14 @@ function submitQuestion(
   state: SessionState,
   { actorId, command, ctx }: { actorId: string | null; command: SubmitQuestionCommand; ctx: CommandContext },
 ): SessionState {
-  const author = requireParticipant(state, actorId)
+  const author = requireParticipantDuring(state, { actorId, phase: 'burst' })
   requireBurstOpen(state, ctx.now)
   const question: Question = { id: ctx.newId(), authorId: author.id, text: validQuestionText(command.text) }
   return { ...state, questions: { ...state.questions, [question.id]: question } }
 }
 
 function markDone(state: SessionState, actorId: string | null): SessionState {
-  const participant = requireParticipant(state, actorId)
-  requireBurst(state)
+  const participant = requireParticipantDuring(state, { actorId, phase: 'burst' })
   if (participant.done) return state
   return withParticipant(state, { ...participant, done: true })
 }
@@ -140,12 +146,16 @@ function findParticipant(state: SessionState, actorId: string | null): Participa
   return actorId === null ? undefined : state.participants[actorId]
 }
 
-function requireBurst(state: SessionState): void {
-  if (state.phase !== 'burst') throw new CommandRejected('The burst is not running')
+function requireParticipantDuring(
+  state: SessionState,
+  { actorId, phase }: { actorId: string | null; phase: InteractivePhase },
+): Participant {
+  const participant = requireParticipant(state, actorId)
+  if (state.phase !== phase) throw new CommandRejected(PHASE_CLOSED_REASONS[phase])
+  return participant
 }
 
 function requireBurstOpen(state: SessionState, now: number): void {
-  requireBurst(state)
   if (now > burstClosesAt(state)) throw new CommandRejected('The burst has ended')
 }
 
@@ -184,8 +194,7 @@ function reword(state: SessionState, { actorId, command }: { actorId: string | n
 }
 
 function requireConsolidating(state: SessionState, actorId: string | null): void {
-  requireParticipant(state, actorId)
-  if (state.phase !== 'consolidate') throw new CommandRejected('Groups can only change during consolidate')
+  requireParticipantDuring(state, { actorId, phase: 'consolidate' })
   requireGroupingSettled(state)
 }
 
@@ -232,8 +241,7 @@ function removeVote(state: SessionState, { actorId, command }: VoteInput): Sessi
 }
 
 function requireVoting(state: SessionState, { actorId, command }: VoteInput): string {
-  const voter = requireParticipant(state, actorId)
-  if (state.phase !== 'vote') throw new CommandRejected('Voting is not open')
+  const voter = requireParticipantDuring(state, { actorId, phase: 'vote' })
   requireGroup(state, command.groupId)
   return voter.id
 }

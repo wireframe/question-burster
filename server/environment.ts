@@ -1,4 +1,4 @@
-export interface Environment {
+interface Environment {
   port: number
   databasePath: string
   anthropicApiKey: string

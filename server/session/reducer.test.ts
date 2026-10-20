@@ -6,6 +6,8 @@ import type { CommandContext, GroupDraft, SessionState } from './state'
 import { buildSession } from './test-support'
 import { BURST_GRACE_MS } from './timer'
 
+const ada = { id: 'p1', resumeToken: 't1', name: 'Ada', done: false }
+
 function contextWithIds(...ids: string[]): CommandContext {
   return { now: 1_000, newId: () => ids.shift() ?? 'unexpected-id' }
 }
@@ -66,7 +68,7 @@ describe('CommandRejected', () => {
 })
 
 describe('applyCommand join', () => {
-  const ada = { id: 'p1', resumeToken: 't1', name: 'Ada', done: true }
+  const doneAda = { ...ada, done: true }
 
   it('adds a participant with a new id, a new resume token and a trimmed name', () => {
     const result = join(buildSession(), { name: '  Ada  ' })
@@ -96,12 +98,12 @@ describe('applyCommand join', () => {
   })
 
   it('rejoins and renames the participant whose resume token matches', () => {
-    const state = buildSession({ participants: { p1: ada } })
+    const state = buildSession({ participants: { p1: doneAda } })
 
     const result = join(state, { name: 'Grace', resumeToken: 't1' })
 
     expect(result.joined).toEqual({ participantId: 'p1', resumeToken: 't1' })
-    expect(result.state.participants).toEqual({ p1: { ...ada, name: 'Grace' } })
+    expect(result.state.participants).toEqual({ p1: { ...doneAda, name: 'Grace' } })
   })
 
   it('treats an unknown resume token as a new join', () => {
@@ -112,7 +114,7 @@ describe('applyCommand join', () => {
   })
 
   it('renames the participant a socket already joined as instead of adding another', () => {
-    const state = buildSession({ participants: { p1: ada } })
+    const state = buildSession({ participants: { p1: doneAda } })
 
     const result = applyCommand(state, {
       actorId: 'p1',
@@ -121,16 +123,16 @@ describe('applyCommand join', () => {
     })
 
     expect(result.joined).toEqual({ participantId: 'p1', resumeToken: 't1' })
-    expect(result.state.participants).toEqual({ p1: { ...ada, name: 'Grace' } })
+    expect(result.state.participants).toEqual({ p1: { ...doneAda, name: 'Grace' } })
   })
 
   it("never lets another participant's id claim their identity", () => {
-    const state = buildSession({ participants: { p1: ada } })
+    const state = buildSession({ participants: { p1: doneAda } })
 
     const result = join(state, { name: 'Mallory', resumeToken: 'p1' })
 
     expect(result.joined?.participantId).toBe('p-new')
-    expect(result.state.participants.p1).toEqual(ada)
+    expect(result.state.participants.p1).toEqual(doneAda)
   })
 })
 
@@ -190,8 +192,6 @@ describe('applyCommand advance', () => {
   })
 })
 
-const ada = { id: 'p1', resumeToken: 't1', name: 'Ada', done: false }
-
 describe('applyCommand submitQuestion', () => {
   const endsAt = 10_000
 
@@ -246,7 +246,6 @@ describe('applyCommand submitQuestion', () => {
 })
 
 describe('applyCommand markDone', () => {
-
   function markDone(state: SessionState, actorId = 'p1') {
     return applyCommand(state, { actorId, command: { type: 'markDone' }, ctx: contextWithIds() })
   }

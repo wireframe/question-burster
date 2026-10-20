@@ -95,11 +95,16 @@ describe('projectForClient', () => {
       expect(projectForClient(sessionWithQuestionsFromBoth(), null).myQuestions).toEqual([])
     })
 
-    it('fills myQuestions only during the burst but keeps counts afterwards', () => {
+    it('fills myQuestions only during the burst', () => {
       const view = projectForClient(sessionWithQuestionsFromBoth({ phase: 'consolidate' }), 'p1')
 
       expect(view.myQuestions).toEqual([])
-      expect(view.participants.map((participant) => participant.questionCount)).toEqual([2, 1])
+    })
+
+    it.each(['consolidate', 'vote', 'results'] as const)('hides question counts during %s', (phase) => {
+      const view = projectForClient(sessionWithQuestionsFromBoth({ phase }), 'p1')
+
+      expect(view.participants.map((participant) => participant.questionCount)).toEqual([0, 0])
     })
   })
 

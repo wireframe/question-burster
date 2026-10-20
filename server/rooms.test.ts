@@ -3,7 +3,7 @@ import type { ClientCommand, Phase, ServerMessage } from '../shared/protocol'
 import type { GroupingInput } from './ai/group-questions'
 import { createSessionRepository, openDatabase, type SessionRepository } from './db'
 import { RoomHub, type RoomSocket } from './rooms'
-import type { Clock } from './session/clock'
+import { systemClock } from './session/clock'
 import type { GroupDraft, SessionState } from './session/state'
 import { buildSession } from './session/test-support'
 import { BURST_GRACE_MS } from './session/timer'
@@ -49,7 +49,6 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-const clock: Clock = { now: () => Date.now(), newId: () => crypto.randomUUID() }
 let repository: SessionRepository
 let group: Mock<(input: GroupingInput) => Promise<GroupDraft[]>>
 
@@ -61,10 +60,11 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 function connectSockets(count: number): FakeSocket[] {
-  const room = new RoomHub({ repository, clock, group }).find('s1')!
+  const room = new RoomHub({ repository, clock: systemClock, group }).find('s1')!
   return Array.from({ length: count }, () => {
     const socket = new FakeSocket()
     room.connect(socket)

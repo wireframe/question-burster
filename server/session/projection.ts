@@ -30,7 +30,7 @@ export function projectForClient(state: SessionState, viewerId: string | null): 
 }
 
 function projectParticipants(state: SessionState): ParticipantView[] {
-  const counts = questionCountsByAuthor(state)
+  const counts = visibleQuestionCounts(state)
   return Object.values(state.participants).map((participant) => projectParticipant(participant, counts))
 }
 
@@ -41,6 +41,10 @@ function projectParticipant(participant: Participant, counts: Map<string, number
     questionCount: counts.get(participant.id) ?? 0,
     done: participant.done,
   }
+}
+
+function visibleQuestionCounts(state: SessionState): Map<string, number> {
+  return state.phase === 'burst' ? questionCountsByAuthor(state) : new Map()
 }
 
 function questionCountsByAuthor(state: SessionState): Map<string, number> {

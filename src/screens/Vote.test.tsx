@@ -8,9 +8,9 @@ import { Vote } from './Vote'
 const voteView = buildView({
   phase: 'vote',
   participants: [
-    { id: 'p1', name: 'Ada', questionCount: 2, done: true },
-    { id: 'p2', name: 'Grace', questionCount: 3, done: true },
-    { id: 'p3', name: 'Linus', questionCount: 1, done: false },
+    { id: 'p1', name: 'Ada', questionCount: 0, done: true },
+    { id: 'p2', name: 'Grace', questionCount: 0, done: true },
+    { id: 'p3', name: 'Linus', questionCount: 0, done: false },
   ],
   groups: [
     {
