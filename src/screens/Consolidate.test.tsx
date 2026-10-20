@@ -14,11 +14,11 @@ const readyView = buildView({
       label: 'Review speed',
       version: 3,
       questions: [
-        { id: 'q1', text: 'Why do reviews take days?' },
-        { id: 'q2', text: 'Who reviews what?' },
+        { id: 'q1', text: 'Why do reviews take days?', color: 0 },
+        { id: 'q2', text: 'Who reviews what?', color: 1 },
       ],
     },
-    { id: 'g2', label: 'Deploys', version: 0, questions: [{ id: 'q3', text: 'Why are deploys scary?' }] },
+    { id: 'g2', label: 'Deploys', version: 0, questions: [{ id: 'q3', text: 'Why are deploys scary?', color: 0 }] },
   ],
 })
 
@@ -30,6 +30,10 @@ function renderConsolidate(view: SessionView = readyView) {
 
 function groupCard(label: string) {
   return screen.getByRole('group', { name: label })
+}
+
+function noteBackground(text: string) {
+  return [...screen.getByText(text).closest('li')!.classList].find((name) => name.startsWith('bg-'))
 }
 
 describe('Consolidate', () => {
@@ -45,6 +49,14 @@ describe('Consolidate', () => {
     expect(within(groupCard('Review speed')).getByText('Why do reviews take days?')).toBeInTheDocument()
     expect(within(groupCard('Review speed')).getByText('Who reviews what?')).toBeInTheDocument()
     expect(within(groupCard('Deploys')).getByText('Why are deploys scary?')).toBeInTheDocument()
+  })
+
+  it('colors notes from the same author alike and explains the colors', () => {
+    renderConsolidate()
+
+    expect(noteBackground('Why do reviews take days?')).toBe(noteBackground('Why are deploys scary?'))
+    expect(noteBackground('Who reviews what?')).not.toBe(noteBackground('Why do reviews take days?'))
+    expect(screen.getByText('Colors show which questions came from the same person.')).toBeInTheDocument()
   })
 
   it('merges a group into the target chosen in its select', async () => {

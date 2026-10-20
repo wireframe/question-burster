@@ -21,10 +21,13 @@ function GroupingIndicator() {
 
 function GroupList({ groups, send }: Pick<PhaseScreenProps, 'send'> & { groups: GroupView[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {groups.map((group) => (
-        <QuestionGroup key={group.id} group={group} otherGroups={groups.filter((other) => other !== group)} send={send} />
-      ))}
+    <div className="space-y-3">
+      <p className="text-xs text-ink-muted">Colors show which questions came from the same person.</p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {groups.map((group) => (
+          <QuestionGroup key={group.id} group={group} otherGroups={groups.filter((other) => other !== group)} send={send} />
+        ))}
+      </div>
     </div>
   )
 }

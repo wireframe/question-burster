@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { rankResults } from './results'
 import type { Group } from './state'
-import { buildSession, expectNoKey } from './test-support'
+import { buildParticipant, buildSession, expectNoKey } from './test-support'
 
 const questions = {
   q1: { id: 'q1', authorId: 'p1', text: 'Why now?' },
   q2: { id: 'q2', authorId: 'p2', text: 'Why today?' },
   q3: { id: 'q3', authorId: 'p1', text: 'Who pays?' },
   q4: { id: 'q4', authorId: 'p2', text: 'How big?' },
+}
+
+const participants = {
+  p1: buildParticipant({ id: 'p1', colorIndex: 2 }),
+  p2: buildParticipant({ id: 'p2', colorIndex: 5 }),
 }
 
 function group(id: string, label: string, questionIds: string[]): Group {
@@ -19,7 +24,7 @@ const money = group('g2', 'Money', ['q3'])
 const scale = group('g3', 'Scale', ['q4'])
 
 function rankedWith(votes: Record<string, Record<string, number>>) {
-  return rankResults(buildSession({ phase: 'results', questions, groups: { g1: timing, g2: money, g3: scale }, votes }))
+  return rankResults(buildSession({ phase: 'results', participants, questions, groups: { g1: timing, g2: money, g3: scale }, votes }))
 }
 
 describe('rankResults', () => {
@@ -30,8 +35,8 @@ describe('rankResults', () => {
       groupId: 'g1',
       label: 'Timing',
       questions: [
-        { id: 'q1', text: 'Why now?' },
-        { id: 'q2', text: 'Why today?' },
+        { id: 'q1', text: 'Why now?', color: 2 },
+        { id: 'q2', text: 'Why today?', color: 5 },
       ],
       votes: 1,
       rank: 1,

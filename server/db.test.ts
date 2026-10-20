@@ -7,7 +7,7 @@ import type { SessionState } from './session/state'
 import { buildSession } from './session/test-support'
 
 function lobbySession(overrides: Partial<SessionState> = {}): SessionState {
-  return buildSession({ participants: { p1: { id: 'p1', resumeToken: 't1', name: 'Ada', done: false } }, ...overrides })
+  return buildSession({ participants: { p1: { id: 'p1', resumeToken: 't1', name: 'Ada', done: false, colorIndex: 0 } }, ...overrides })
 }
 
 function inMemoryRepository() {

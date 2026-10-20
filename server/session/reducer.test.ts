@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { VOTES_PER_PERSON, type ClientCommand, type Phase } from '../../shared/protocol'
+import { NOTE_COLOR_COUNT, VOTES_PER_PERSON, type ClientCommand, type Phase } from '../../shared/protocol'
 import { CommandRejected } from './errors'
 import { applyCommand, createSession, singletonGroups } from './reducer'
 import type { CommandContext, GroupDraft, SessionState } from './state'
 import { buildSession } from './test-support'
 import { BURST_GRACE_MS } from './timer'
 
-const ada = { id: 'p1', resumeToken: 't1', name: 'Ada', done: false }
+const ada = { id: 'p1', resumeToken: 't1', name: 'Ada', done: false, colorIndex: 0 }
 
 function contextWithIds(...ids: string[]): CommandContext {
-  return { now: 1_000, newId: () => ids.shift() ?? 'unexpected-id' }
+  return { now: 1_000, newId: () => ids.shift() ?? 'unexpected-id', random: () => 0 }
 }
 
 function join(state: SessionState, command: { name: string; resumeToken?: string }, ctx = contextWithIds('p-new', 't-new')) {
@@ -75,8 +75,26 @@ describe('applyCommand join', () => {
 
     expect(result.joined).toEqual({ participantId: 'p-new', resumeToken: 't-new' })
     expect(result.state.participants).toEqual({
-      'p-new': { id: 'p-new', resumeToken: 't-new', name: 'Ada', done: false },
+      'p-new': { id: 'p-new', resumeToken: 't-new', name: 'Ada', done: false, colorIndex: 0 },
     })
+  })
+
+  it('gives a new participant a note color nobody else has', () => {
+    const state = buildSession({ participants: { p1: ada } })
+
+    expect(join(state, { name: 'Grace' }).state.participants['p-new'].colorIndex).toBe(1)
+  })
+
+  it('picks the note color with the random source', () => {
+    const ctx = { ...contextWithIds('p-new', 't-new'), random: () => 0.999 }
+
+    expect(join(buildSession(), { name: 'Grace' }, ctx).state.participants['p-new'].colorIndex).toBe(NOTE_COLOR_COUNT - 1)
+  })
+
+  it('keeps the note color when a participant rejoins', () => {
+    const state = buildSession({ participants: { p1: { ...ada, colorIndex: 5 } } })
+
+    expect(join(state, { name: 'Ada', resumeToken: 't1' }).state.participants.p1.colorIndex).toBe(5)
   })
 
   it('does not mutate the input state', () => {
@@ -200,7 +218,7 @@ describe('applyCommand submitQuestion', () => {
   }
 
   function submit(state: SessionState, { text, actorId = 'p1', now = 5_000 }: { text: string; actorId?: string; now?: number }) {
-    const ctx = { now, newId: () => 'q-new' }
+    const ctx = { now, newId: () => 'q-new', random: () => 0 }
     return applyCommand(state, { actorId, command: { type: 'submitQuestion', text }, ctx })
   }
 
@@ -448,7 +466,7 @@ describe('consolidation commands', () => {
 })
 
 describe('vote commands', () => {
-  const bob = { id: 'p2', resumeToken: 't2', name: 'Bob', done: false }
+  const bob = { id: 'p2', resumeToken: 't2', name: 'Bob', done: false, colorIndex: 1 }
   const groups = {
     g1: { id: 'g1', label: 'Timing', version: 0, questionIds: ['q1'] },
     g2: { id: 'g2', label: 'Who pays?', version: 0, questionIds: ['q2'] },

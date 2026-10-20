@@ -13,6 +13,7 @@ import {
 } from '../../shared/protocol'
 import { burstLengthRejected, challengeRequired, CommandRejected } from './errors'
 import type { CommandContext, Group, GroupDraft, Participant, Question, SessionState, SystemCommand } from './state'
+import { pickColorIndex } from './note-colors'
 import { burstClosesAt } from './timer'
 import { votesUsedBy } from './votes'
 
@@ -100,7 +101,7 @@ function join(
 ): CommandResult {
   const name = validName(command.name)
   const existing = findByResumeToken(state, command.resumeToken) ?? findParticipant(state, actorId)
-  const participant = existing ? { ...existing, name } : newParticipant(name, ctx)
+  const participant = existing ? { ...existing, name } : newParticipant(state, { name, ctx })
   return {
     state: withParticipant(state, participant),
     joined: { participantId: participant.id, resumeToken: participant.resumeToken },
@@ -112,8 +113,13 @@ function findByResumeToken(state: SessionState, resumeToken: string | undefined)
   return Object.values(state.participants).find((participant) => participant.resumeToken === resumeToken)
 }
 
-function newParticipant(name: string, ctx: CommandContext): Participant {
-  return { id: ctx.newId(), resumeToken: ctx.newId(), name, done: false }
+function newParticipant(state: SessionState, { name, ctx }: { name: string; ctx: CommandContext }): Participant {
+  const colorIndex = pickColorIndex(usedColorIndexes(state), ctx.random)
+  return { id: ctx.newId(), resumeToken: ctx.newId(), name, done: false, colorIndex }
+}
+
+function usedColorIndexes(state: SessionState): number[] {
+  return Object.values(state.participants).map((participant) => participant.colorIndex)
 }
 
 function withParticipant(state: SessionState, participant: Participant): SessionState {

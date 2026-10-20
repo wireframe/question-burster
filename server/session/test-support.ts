@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import type { SessionState } from './state'
+import type { Participant, SessionState } from './state'
 
 export function buildSession(overrides: Partial<SessionState> = {}): SessionState {
   return {
@@ -15,6 +15,10 @@ export function buildSession(overrides: Partial<SessionState> = {}): SessionStat
     votes: {},
     ...overrides,
   }
+}
+
+export function buildParticipant(overrides: Pick<Participant, 'id'> & Partial<Participant>): Participant {
+  return { resumeToken: `token-${overrides.id}`, name: overrides.id, done: false, colorIndex: 0, ...overrides }
 }
 
 export function expectNoKey(value: unknown, key: string): void {

@@ -21,8 +21,8 @@ function sessionWithTwoParticipants(): SessionState {
     phase: 'burst',
     endsAt: 5_000,
     participants: {
-      p1: { id: 'p1', resumeToken: 't1', name: 'Ada', done: false },
-      p2: { id: 'p2', resumeToken: 't2', name: 'Grace', done: true },
+      p1: { id: 'p1', resumeToken: 't1', name: 'Ada', done: false, colorIndex: 3 },
+      p2: { id: 'p2', resumeToken: 't2', name: 'Grace', done: true, colorIndex: 6 },
     },
   })
 }
@@ -64,6 +64,13 @@ describe('projectForClient', () => {
     expectNoKey(projectForClient(sessionWithTwoParticipants(), null), 'authorId')
   })
 
+  it('never exposes the participant color mapping', () => {
+    const view = projectForClient(sessionWithQuestionsFromBoth({ phase: 'consolidate' }), 'p1')
+
+    expectNoKey(view, 'colorIndex')
+    expectNoKey(view.participants, 'color')
+  })
+
   it('never exposes resumeToken, even to the participant it belongs to', () => {
     expectNoKey(projectForClient(sessionWithTwoParticipants(), 'p1'), 'resumeToken')
   })
@@ -83,8 +90,8 @@ describe('projectForClient', () => {
       const view = projectForClient(sessionWithQuestionsFromBoth(), 'p1')
 
       expect(view.myQuestions).toEqual([
-        { id: 'q1', text: 'Ada asks one' },
-        { id: 'q3', text: 'Ada asks two' },
+        { id: 'q1', text: 'Ada asks one', color: 3 },
+        { id: 'q3', text: 'Ada asks two', color: 3 },
       ])
     })
 
@@ -133,17 +140,25 @@ describe('projectForClient', () => {
       const view = projectForClient(consolidatingSession(), 'p1')
 
       expect(view.groups).toEqual([
-        { id: 'g2', label: 'Apple worries', version: 1, questions: [{ id: 'q2', text: 'Grace secret' }] },
+        { id: 'g2', label: 'Apple worries', version: 1, questions: [{ id: 'q2', text: 'Grace secret', color: 6 }] },
         {
           id: 'g1',
           label: 'Zebra concerns',
           version: 2,
           questions: [
-            { id: 'q3', text: 'Ada asks two' },
-            { id: 'q1', text: 'Ada asks one' },
+            { id: 'q3', text: 'Ada asks two', color: 3 },
+            { id: 'q1', text: 'Ada asks one', color: 3 },
           ],
         },
       ])
+    })
+
+    it('colors each question by its author', () => {
+      const [appleGroup, zebraGroup] = projectForClient(consolidatingSession(), 'p1').groups
+      const [adaTwo, adaOne] = zebraGroup.questions
+
+      expect(adaOne.color).toBe(adaTwo.color)
+      expect(appleGroup.questions[0].color).not.toBe(adaOne.color)
     })
 
     it('never exposes authorId in groups', () => {

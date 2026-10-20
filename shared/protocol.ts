@@ -17,6 +17,7 @@ export const MAX_NAME_LENGTH = 40
 export const MAX_QUESTION_LENGTH = 280
 export const MAX_LABEL_LENGTH = MAX_QUESTION_LENGTH
 export const VOTES_PER_PERSON = 3
+export const NOTE_COLOR_COUNT = 8
 
 export const SESSIONS_PATH = '/api/sessions'
 export const WS_PATH = '/ws'
@@ -60,6 +61,7 @@ export interface ParticipantView {
 export interface QuestionView {
   id: string
   text: string
+  color: number
 }
 
 export type GroupingStatus = 'idle' | 'pending' | 'ready'

@@ -5,7 +5,6 @@ import { contextFrom, type Clock } from './session/clock'
 import { parseCommand } from './session/commands'
 import { CommandRejected } from './session/errors'
 import { projectForClient } from './session/projection'
-import { toQuestionView } from './session/question-views'
 import {
   applyCommand,
   isAwaitingGroups,
@@ -157,7 +156,7 @@ class Room {
 function ignoreProtocolError(): void {}
 
 function groupingInputFrom({ challenge, questions }: SessionState): GroupingInput {
-  return { challenge, questions: Object.values(questions).map(toQuestionView) }
+  return { challenge, questions: Object.values(questions).map(({ id, text }) => ({ id, text })) }
 }
 
 function messageOf(error: unknown): string {

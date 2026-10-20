@@ -12,8 +12,8 @@ const burstView = buildView({
     { id: 'p2', name: 'Grace', done: true },
   ],
   myQuestions: [
-    { id: 'q1', text: 'What slows us down?' },
-    { id: 'q2', text: 'Who waits on whom?' },
+    { id: 'q1', text: 'What slows us down?', color: 0 },
+    { id: 'q2', text: 'Who waits on whom?', color: 0 },
   ],
 })
 

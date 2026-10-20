@@ -5,6 +5,7 @@ export interface Participant {
   resumeToken: string
   name: string
   done: boolean
+  colorIndex: number
 }
 
 export interface Question {
@@ -41,4 +42,5 @@ export interface SessionState {
 export interface CommandContext {
   now: number
   newId: () => string
+  random: () => number
 }

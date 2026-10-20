@@ -5,7 +5,7 @@ import { createSessionRepository, openDatabase, type SessionRepository } from '.
 import { RoomHub, type RoomSocket } from './rooms'
 import { systemClock } from './session/clock'
 import type { GroupDraft, SessionState } from './session/state'
-import { buildSession } from './session/test-support'
+import { buildParticipant, buildSession } from './session/test-support'
 import { BURST_GRACE_MS } from './session/timer'
 
 class FakeSocket implements RoomSocket {
@@ -132,6 +132,10 @@ describe('grouping', () => {
     q1: { id: 'q1', authorId: 'p1', text: 'Who owns onboarding?' },
     q2: { id: 'q2', authorId: 'p2', text: 'Why does setup take a week?' },
   }
+  const participants = {
+    p1: buildParticipant({ id: 'p1' }),
+    p2: buildParticipant({ id: 'p2', colorIndex: 1 }),
+  }
   let grouping: Deferred<GroupDraft[]>
 
   beforeEach(() => {
@@ -140,7 +144,7 @@ describe('grouping', () => {
   })
 
   function saveSession(overrides: Partial<SessionState>): void {
-    repository.save(buildSession({ id: 's1', challenge: 'Onboarding is slow', questions, ...overrides }))
+    repository.save(buildSession({ id: 's1', challenge: 'Onboarding is slow', participants, questions, ...overrides }))
   }
 
   function connectInBurst(): FakeSocket {

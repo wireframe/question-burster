@@ -58,7 +58,7 @@ function GroupQuestions({ group, send }: GroupActionProps) {
   return (
     <ul className="space-y-2">
       {group.questions.map((question, index) => (
-        <li key={question.id} className={`${stickyNoteClasses(index)} flex w-full items-start justify-between gap-2 px-3 py-2 text-sm`}>
+        <li key={question.id} className={`${stickyNoteClasses(question.color, index)} flex w-full items-start justify-between gap-2 px-3 py-2 text-sm`}>
           <span className="min-w-0 flex-1 pt-1">{question.text}</span>
           {splittable && <SplitButton groupId={group.id} question={question} send={send} />}
         </li>

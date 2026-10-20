@@ -49,7 +49,7 @@ function hasCompletedStep(state: SessionState, participant: Participant): boolea
 
 function myQuestions(state: SessionState, viewerId: string | null): QuestionView[] {
   if (state.phase !== 'burst' || viewerId === null) return []
-  return questionsBy(state, viewerId).map(toQuestionView)
+  return questionsBy(state, viewerId).map((question) => toQuestionView(question, state))
 }
 
 function questionsBy(state: SessionState, authorId: string): Question[] {

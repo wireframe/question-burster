@@ -10,14 +10,14 @@ const resultsView = buildView({
       groupId: 'g1',
       label: 'Review speed',
       questions: [
-        { id: 'q1', text: 'Why do reviews take days?' },
-        { id: 'q2', text: 'Who reviews what?' },
+        { id: 'q1', text: 'Why do reviews take days?', color: 0 },
+        { id: 'q2', text: 'Who reviews what?', color: 1 },
       ],
       votes: 5,
       rank: 1,
     },
-    { groupId: 'g2', label: 'Deploys', questions: [{ id: 'q3', text: 'Why are deploys scary?' }], votes: 1, rank: 2 },
-    { groupId: 'g3', label: 'Testing', questions: [{ id: 'q4', text: 'Why is CI slow?' }], votes: 1, rank: 2 },
+    { groupId: 'g2', label: 'Deploys', questions: [{ id: 'q3', text: 'Why are deploys scary?', color: 0 }], votes: 1, rank: 2 },
+    { groupId: 'g3', label: 'Testing', questions: [{ id: 'q4', text: 'Why is CI slow?', color: 2 }], votes: 1, rank: 2 },
   ],
 })
 
