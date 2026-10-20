@@ -38,11 +38,11 @@ describe('Results', () => {
 
     const items = rankedItems()
     expect(items).toHaveLength(3)
-    expect(within(items[0]).getByText('#1 Review speed')).toBeInTheDocument()
+    expect(within(items[0]).getByRole('heading', { name: '#1 Review speed' })).toBeInTheDocument()
     expect(within(items[0]).getByText('5 votes')).toBeInTheDocument()
-    expect(within(items[1]).getByText('#2 Deploys')).toBeInTheDocument()
+    expect(within(items[1]).getByRole('heading', { name: '#2 Deploys' })).toBeInTheDocument()
     expect(within(items[1]).getByText('1 vote')).toBeInTheDocument()
-    expect(within(items[2]).getByText('#2 Testing')).toBeInTheDocument()
+    expect(within(items[2]).getByRole('heading', { name: '#2 Testing' })).toBeInTheDocument()
   })
 
   it('shows each group\'s constituent questions', () => {

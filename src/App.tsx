@@ -1,4 +1,6 @@
 import { createSessionRequest } from './api'
+import { AppShell } from './components/AppShell'
+import { primaryButton } from './components/ui'
 import { parseRoute } from './route'
 import { CreateSession } from './screens/CreateSession'
 import { SessionScreen } from './screens/SessionScreen'
@@ -8,6 +10,14 @@ function goToSession(id: string) {
 }
 
 export function App() {
+  return (
+    <AppShell>
+      <RoutedScreen />
+    </AppShell>
+  )
+}
+
+function RoutedScreen() {
   const route = parseRoute(location.pathname)
   switch (route.name) {
     case 'create':
@@ -21,9 +31,9 @@ export function App() {
 
 function NotFound() {
   return (
-    <>
-      <h1>Not found</h1>
-      <a href="/">Start a new session</a>
-    </>
+    <div className="space-y-6 py-12 text-center">
+      <h1 className="text-3xl font-bold">Not found</h1>
+      <a href="/" className={primaryButton}>Start a new session</a>
+    </div>
   )
 }

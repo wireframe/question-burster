@@ -1,5 +1,6 @@
 import { isFinalPhase, type SessionView } from '../../shared/protocol'
 import { RejectionNotice } from '../components/RejectionNotice'
+import { WorkflowStepper } from '../components/WorkflowStepper'
 import { useCountdown } from '../session/useCountdown'
 import { useSession, type Session } from '../session/useSession'
 import { Burst } from './Burst'
@@ -24,11 +25,25 @@ function needsToJoin(participantId: string | null, view: SessionView): boolean {
 }
 
 function SessionBody({ session }: { session: Session }) {
-  const { view, participantId, rejoining, join } = session
-  if (!view) return <p>Connecting…</p>
-  if (rejoining) return <p>Rejoining…</p>
+  const { view } = session
+  if (!view) return <StatusMessage>Connecting…</StatusMessage>
+  return (
+    <div className="space-y-6">
+      <WorkflowStepper phase={view.phase} />
+      <SessionContent session={session} view={view} />
+    </div>
+  )
+}
+
+function SessionContent({ session, view }: LiveSessionProps) {
+  const { participantId, rejoining, join } = session
+  if (rejoining) return <StatusMessage>Rejoining…</StatusMessage>
   if (needsToJoin(participantId, view)) return <JoinSession challenge={view.challenge} onJoin={join} />
   return <PhaseScreen session={session} view={view} />
+}
+
+function StatusMessage({ children }: { children: string }) {
+  return <p className="py-12 text-center text-ink-muted">{children}</p>
 }
 
 interface LiveSessionProps {

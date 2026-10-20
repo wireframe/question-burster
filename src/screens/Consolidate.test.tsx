@@ -89,6 +89,16 @@ describe('Consolidate', () => {
     expect(send).toHaveBeenCalledWith({ type: 'reword', groupId: 'g1', label: 'Code review', baseVersion: 3 })
   })
 
+  it('does not insert a newline when Enter commits the label', async () => {
+    const { user } = renderConsolidate()
+
+    const label = within(groupCard('Deploys')).getByLabelText('Label')
+    await user.click(label)
+    await user.keyboard(' safety{Enter}')
+
+    expect(label).toHaveValue('Deploys safety')
+  })
+
   it('rewords a label on blur', async () => {
     const { send, user } = renderConsolidate()
 

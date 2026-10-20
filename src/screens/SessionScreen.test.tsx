@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSession, type Session } from '../session/useSession'
@@ -22,6 +22,11 @@ function renderWithSession(overrides: Partial<Session>) {
   vi.mocked(useSession).mockReturnValue(session)
   render(<SessionScreen sessionId="s1" />)
   return session
+}
+
+function currentStep() {
+  const steps = within(screen.getByRole('list', { name: 'Session progress' })).getAllByRole('listitem')
+  return steps.find((step) => step.getAttribute('aria-current') === 'step')
 }
 
 describe('SessionScreen', () => {
@@ -79,6 +84,34 @@ describe('SessionScreen', () => {
 
     expect(screen.getByRole('list', { name: 'Ranked groups' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Join' })).not.toBeInTheDocument()
+  })
+
+  it('shows session progress on the join screen', () => {
+    renderWithSession({})
+
+    expect(currentStep()).toHaveTextContent('Join')
+  })
+
+  it.each([
+    ['lobby', 'Join'],
+    ['consolidate', 'Consolidate'],
+    ['vote', 'Vote'],
+  ] as const)('marks the %s phase as the current step', (phase, label) => {
+    renderWithSession({ participantId: 'p1', view: buildView({ phase, groupingStatus: 'pending' }) })
+
+    expect(currentStep()).toHaveTextContent(label)
+  })
+
+  it('shows session progress on the results', () => {
+    renderWithSession({ view: buildView({ phase: 'results', results: [] }) })
+
+    expect(currentStep()).toHaveTextContent('Results')
+  })
+
+  it('shows no session progress while connecting', () => {
+    renderWithSession({ view: null })
+
+    expect(screen.queryByRole('list', { name: 'Session progress' })).not.toBeInTheDocument()
   })
 
   it('shows the last rejection as an alert', () => {

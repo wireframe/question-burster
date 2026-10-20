@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Phase } from '../../shared/protocol'
+import { primaryButton } from '../components/ui'
 import type { PhaseScreenProps } from './types'
 
 interface AdvanceButtonProps extends Pick<PhaseScreenProps, 'send'> {
@@ -10,7 +11,7 @@ interface AdvanceButtonProps extends Pick<PhaseScreenProps, 'send'> {
 
 export function AdvanceButton({ phase, send, children = 'Next phase →', disabled = false }: AdvanceButtonProps) {
   return (
-    <button type="button" disabled={disabled} onClick={() => send({ type: 'advance', fromPhase: phase })}>
+    <button type="button" className={primaryButton} disabled={disabled} onClick={() => send({ type: 'advance', fromPhase: phase })}>
       {children}
     </button>
   )

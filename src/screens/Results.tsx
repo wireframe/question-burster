@@ -1,15 +1,19 @@
 import type { ResultView, SessionView } from '../../shared/protocol'
+import { ChallengeBanner } from '../components/ChallengeBanner'
 import { QuestionList } from '../components/QuestionList'
+import { card } from '../components/ui'
 import { pluralize } from './pluralize'
 
 export function Results({ view }: { view: SessionView }) {
+  const results = requireResults(view)
+  const mostVotes = Math.max(1, ...results.map((result) => result.votes))
   return (
-    <>
-      <h1>{view.challenge}</h1>
-      <ol aria-label="Ranked groups" className="ranked-groups">
-        {requireResults(view).map((result) => <RankedGroup key={result.groupId} result={result} />)}
+    <div className="space-y-6">
+      <ChallengeBanner challenge={view.challenge} />
+      <ol aria-label="Ranked groups" className="space-y-4">
+        {results.map((result) => <RankedGroup key={result.groupId} result={result} mostVotes={mostVotes} />)}
       </ol>
-    </>
+    </div>
   )
 }
 
@@ -18,12 +22,32 @@ function requireResults(view: SessionView): ResultView[] {
   return view.results
 }
 
-function RankedGroup({ result }: { result: ResultView }) {
+function RankedGroup({ result, mostVotes }: { result: ResultView; mostVotes: number }) {
+  const top = result.rank === 1
   return (
-    <li className="question-group">
-      <h2>#{result.rank} {result.label}</h2>
-      <p>{pluralize(result.votes, 'vote')}</p>
+    <li className={`${card} space-y-4 ${top ? 'border-2 border-accent ring-4 ring-accent-soft' : ''}`}>
+      <h2 className={`flex items-center gap-3 font-semibold ${top ? 'text-xl sm:text-2xl' : 'text-lg'}`}>
+        <RankBadge rank={result.rank} />{' '}
+        <span className="min-w-0 break-words">{result.label}</span>
+      </h2>
+      <VoteBar votes={result.votes} mostVotes={mostVotes} />
       <QuestionList questions={result.questions} />
     </li>
+  )
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  const style = rank === 1 ? 'size-11 bg-accent text-white text-lg' : 'size-9 bg-accent-soft text-accent text-sm'
+  return <span className={`flex shrink-0 items-center justify-center rounded-full font-bold ${style}`}>#{rank}</span>
+}
+
+function VoteBar({ votes, mostVotes }: { votes: number; mostVotes: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div aria-hidden="true" className="h-2.5 flex-1 overflow-hidden rounded-full bg-accent-soft">
+        <div className="h-full rounded-full bg-accent" style={{ width: `${(votes / mostVotes) * 100}%` }} />
+      </div>
+      <p className="w-16 text-right text-sm font-semibold tabular-nums">{pluralize(votes, 'vote')}</p>
+    </div>
   )
 }

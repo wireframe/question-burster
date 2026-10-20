@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatClock, secondsRemaining } from './countdown'
+import { countdownUrgency, formatClock, secondsRemaining } from './countdown'
 
 describe('secondsRemaining', () => {
   it('rounds the time left on the server clock up to whole seconds', () => {
@@ -18,5 +18,18 @@ describe('formatClock', () => {
     [0, '0:00'],
   ])('formats %i seconds as %s', (seconds, clock) => {
     expect(formatClock(seconds)).toBe(clock)
+  })
+})
+
+describe('countdownUrgency', () => {
+  it.each([
+    [125, 'calm'],
+    [30, 'calm'],
+    [29, 'warning'],
+    [10, 'warning'],
+    [9, 'critical'],
+    [0, 'critical'],
+  ] as const)('treats %i seconds left as %s', (seconds, urgency) => {
+    expect(countdownUrgency(seconds)).toBe(urgency)
   })
 })
